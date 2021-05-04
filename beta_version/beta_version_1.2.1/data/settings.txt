@@ -1,0 +1,2 @@
+{'yellow_up': 273, 'yellow_right': 275, 'yellow_down': 274, 'yellow_left': 276, 'songc_up': 273, 'songc_down': 274, 'itemc_develop': 303, 'itemc_back': 303, 'itemc_up': 273, 'itemc_right': 275, 'itemc_down': 274, 'itemc_left': 276, 'lobby_left': 276, 'lobby_right': 275, 'game_exit': 282, 'switch_message': 109}
+["消除上方子弹", "消除右方子弹", "消除下方子弹", "消除左方子弹", "向上切换谱面", "向下切换谱面", "展开物品列表", "收起物品列表", "在物品列表向上切换物品", "在物品列表向右切换物品", "在物品列表向下切换物品", "在物品列表向左切换物品", "在大厅向左移动", "在大厅向右移动", "退出游戏", "显示/隐藏控制台信息"]
