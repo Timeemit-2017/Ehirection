@@ -50,7 +50,8 @@ VERSION = "1.3.0"
 
 pygame.display.set_icon(pygame.image.load("eightDirection.ico"))
 # os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0,0)
-canvas = pygame.display.set_mode((WIDTH, HEIGHT), FULLSCREEN | SWSURFACE)
+SCREENTAG = RESIZABLE
+canvas = pygame.display.set_mode((WIDTH, HEIGHT), SCREENTAG)
 canvas.fill((255, 255, 255, 255))
 BGblack = canvas.get_rect()
 # 设置标题
@@ -118,10 +119,9 @@ def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=
     print(magnitude)
     maxSpeed = magnitude / timeNeed * 2
 
-
 # 创建handleEvent方法
 def handleEvent():
-    global canvas, die, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, BGblack, E_EVENTS, E_MOUSE_POS, E_KEY_PRESSED
+    global canvas, die, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, BGblack, E_EVENTS, E_MOUSE_POS, E_KEY_PRESSED, SCREENTAG
     # 基础常量
     E_EVENTS = pygame.event.get()
     E_MOUSE_POS = pygame.mouse.get_pos()
@@ -177,8 +177,8 @@ def handleEvent():
             die = pygame.Surface((WIDTH, HEIGHT), SRCALPHA | HWSURFACE).convert()
             die.set_alpha(128)
 
-            os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0, 30)
-            canvas = pygame.display.set_mode((WIDTH, HEIGHT), FULLSCREEN | HWSURFACE)
+            # os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0, 30)
+            canvas = pygame.display.set_mode((WIDTH, HEIGHT), SCREENTAG)
             BGblack = canvas.get_rect()
         elif GameVar.states == GameVar.STATES["HOME_0"]:
             if event.type == KEYUP:
