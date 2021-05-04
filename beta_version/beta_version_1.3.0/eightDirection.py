@@ -119,6 +119,7 @@ def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=
     print(magnitude)
     maxSpeed = magnitude / timeNeed * 2
 
+
 # 创建handleEvent方法
 def handleEvent():
     global canvas, die, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, BGblack, E_EVENTS, E_MOUSE_POS, E_KEY_PRESSED, SCREENTAG
@@ -624,176 +625,6 @@ class End():
             self.score_x = 0
 
 
-class __SongChoose():
-    def __init__(self, cph):
-        self.dire = True
-        self.start = False
-        self.width = 250
-        self.height = 250
-        self.x1 = WIDTH / 2 - self.width / 2
-        self.x2 = self.x1
-        self.y1 = HEIGHT / 2 - self.height / 2
-        self.y2 = HEIGHT + HEIGHT / 2 - self.height / 2
-        self.imgs = []
-        self.imgs_road = []
-        self.cph = cph
-        self.number1 = 0
-        self.number2 = 1
-        self.cphx = (WIDTH - 960) / 2
-        self.cphy1 = (HEIGHT - 720) / 2
-        self.cphy2 = HEIGHT + (HEIGHT - 720) / 2
-        self.song_played = False
-        self.info_time = 0.5
-        self.info_lastTime = 0
-        self.info_pass = False
-        self.info_x = 300
-        self.info_y = 95
-        self.speed = 0
-        self.life = 0
-        i = 0
-        # 旧谱面导入
-        # with open("data/song_name.txt", encoding="utf-8") as file:
-        #     for line in file:
-        #         if i == 0:
-        #             self.info_name = eval(line.rstrip())
-        #         elif i == 1:
-        #             self.info_little_name = eval(line.rstrip())
-        #         elif i == 2:
-        #             self.info_time = eval(line.rstrip())
-        #         i += 1
-        # self.info_thisName = self.info_name[0]
-        # self.info_thisLittleName = self.info_little_name[0]
-        # self.info_thisTime = self.info_time[0]
-        # print(type(self.info_thisTime))
-
-    def forceControl(self, acceleration=80, maxSpeed=1000):
-        self.speed += acceleration
-        if self.speed > maxSpeed:
-            self.speed = maxSpeed
-
-    def draw(self):
-
-        # print(self.info_thisName)
-        self.cphx = (WIDTH - 960) / 2
-        self.x1 = WIDTH / 2 - self.width / 2
-        self.x2 = self.x1
-        # self.y1 = HEIGHT/2 - self.height/2
-        # self.y2 = HEIGHT + HEIGHT/2 - self.height/2
-        canvas.blit(self.imgs[self.number1], (self.x1 - 1, self.y1 - 1))
-        canvas.blit(self.cph, (self.cphx, self.cphy1))
-        canvas.blit(self.imgs[self.number2], (self.x2 - 1, self.y2 - 1))
-        canvas.blit(self.cph, (self.cphx, self.cphy2))
-
-    def set(self, dire):
-        if self.life > 0:
-            return
-        self.dire = dire
-        self.speed = 0
-        if self.dire:  # dire为True向下,反之向上
-            self.y1 = HEIGHT_2 - self.height / 2
-            self.y2 = -HEIGHT_2 - self.height / 2
-            self.cphy1 = (HEIGHT - 720) / 2
-            self.cphy2 = -HEIGHT + (HEIGHT - 720) / 2
-        else:
-            self.y1 = HEIGHT_2 - self.height / 2
-            self.y2 = HEIGHT + HEIGHT_2 - self.height / 2
-            self.cphy1 = (HEIGHT - 720) / 2
-            self.cphy2 = HEIGHT + (HEIGHT - 720) / 2
-
-    def step(self):
-        speed = self.speed
-        self.forceControl()
-        if self.dire == True:
-            self.y1 += speed * last_fps_time / 1000
-            self.y2 += speed * last_fps_time / 1000
-            self.cphy1 += speed * last_fps_time / 1000
-            self.cphy2 += speed * last_fps_time / 1000
-        else:
-            self.y1 -= speed * last_fps_time / 1000
-            self.y2 -= speed * last_fps_time / 1000
-            self.cphy1 -= speed * last_fps_time / 1000
-            self.cphy2 -= speed * last_fps_time / 1000
-
-    def ifAnimeTime(self):
-        if self.life < 0:
-            self.life = 0
-        if self.dire:
-            if self.cphy1 >= HEIGHT + (HEIGHT - 720) / 2:
-                self.number(self.dire)
-                self.start = False
-                self.life -= 1
-                return True
-            else:
-                return False
-        else:
-            if self.cphy1 <= -HEIGHT + (HEIGHT - 720) / 2:
-                self.number(self.dire)
-                self.start = False
-                self.life -= 1
-                return True
-            else:
-                return False
-
-    def anime(self):
-        if self.start and not self.ifAnimeTime():
-            self.step()
-
-    def number(self, dire):
-        if dire:
-            self.number1 -= 1
-        else:
-            self.number1 += 1
-        if self.number1 > len(self.imgs) - 1:
-            self.number1 = 0
-        elif self.number1 < 0:
-            self.number1 = len(self.imgs) - 1
-
-        if dire:
-            self.number2 = self.number1 - 1
-        else:
-            self.number2 = self.number1 + 1
-        if self.number2 > len(self.imgs) - 1:
-            self.number2 = 0
-        elif self.number2 < 0:
-            self.number2 = len(self.imgs) - 1
-
-    def check(self):
-        if self.number2 > len(self.imgs) - 1:
-            self.number2 = 0
-        elif self.number2 < 0:
-            self.number2 = len(self.imgs) - 1
-
-    def set_imgs(self):
-        with open("data/songs.txt", encoding="gbk") as file:
-            for line in file:
-                self.imgs_road = eval(line.rstrip())
-                break
-        basic_road = "images/start/songs/"
-        for img_road in self.imgs_road:
-            self.imgs.append(pygame.image.load(basic_road + img_road).convert())
-
-    def info(self):
-        self.draw_info()
-
-    def switch_info(self):
-        self.info_thisName = self.info_name[self.number2]
-        self.info_thisLittleName = self.info_little_name[self.number2]
-        self.info_thisTime = self.info_time[self.number2]
-
-    def draw_info(self):
-        writeText(self.info_thisName, (self.info_x - 5, self.info_y), (255, 255, 255), 255, Font.song_name)
-        writeText(self.info_thisLittleName, (self.info_x, self.info_y + 100), (255, 255, 255), 255, Font.text)
-        writeText("时长：" + self.info_thisTime, (self.info_x, self.info_y + 150), (255, 255, 255), 255, Font.little_text)
-
-    def main(self):
-        self.anime()
-        if not self.start:
-            # self.cphy1 = (HEIGHT - 720) / 2
-            self.set(self.dire)
-            self.info()
-        self.draw()
-
-
 class Record():
     def __init__(self, cph, cover):
         self.cph = cph
@@ -939,7 +770,7 @@ class SongChoose():
             self.record_dd = self.records["dd"]
             self.changeNumber(self.dire)
             self.checkNumber()
-            self.switch_info()
+            self.info_update()
             self.set(False)
 
     def checkMiddle(self):
@@ -948,12 +779,12 @@ class SongChoose():
             if self.record_m.pos[1] < self.recordMain_orgin[1] - self.cphHeight / 2:
                 self.changeNumber(self.dire)
                 self.checkNumber()
-                self.switch_info()
+                self.info_update()
         else:
             if self.record_m.pos[1] > self.recordMain_orgin[1] + self.cphHeight / 2:
                 self.changeNumber(self.dire)
                 self.checkNumber()
-                self.switch_info()
+                self.info_update()
 
     def checkLife(self):
         # 检测生命值是不是低于等于0
@@ -980,7 +811,7 @@ class SongChoose():
     def info(self):
         self.draw_info()
 
-    def switch_info(self):
+    def info_update(self):
         self.info_thisName = self.info_name[self.number]
         self.info_thisLittleName = self.info_little_name[self.number]
         self.info_thisTime = self.info_time[self.number]
@@ -1011,6 +842,10 @@ class SongChoose():
     def step(self):
         self.recordStep(self.dire)
         self.recordCheck()
+
+    def init(self):
+        self.set()
+        self.info_update()
 
     def main(self):
         # 主函数
@@ -1411,7 +1246,10 @@ class DMcomponent():
         self.img = yellowDM
         self.imgLighted = yellow
         self.color = self.img
+        self.x = 0
+        self.y = 0
         self.set()
+
 
     def set(self):
         if GameVar.gamemode == "yellow":
@@ -1439,7 +1277,7 @@ class DMcomponent():
         canvas.blit(self.color, (self.x, self.y))
 
     def lighten(self):
-        if self.iflighted == True:
+        if self.iflighted:
             self.iflighted = False
 
         else:
@@ -1447,11 +1285,11 @@ class DMcomponent():
 
     def hit(self, component):
         c = component
-        return c.x > self.x - c.width and c.x < self.x + self.width and \
+        return self.x - c.width < c.x < self.x + self.width and \
                c.y > self.y - c.height and c.y < self.y + self.height
 
     def bang(self):
-        if self.hit == True:
+        if self.hit:
             GameVar.hero.score += 1
 
 
@@ -1968,24 +1806,27 @@ def control():
     writeText("coin:" + str(GameVar.coin), (0, 650), (25, 25, 255))
 
 
-GameVar.songChoose.set_imgs()
-# GameVar.songChoose.infoInit()
-try:
-    load()
-except:
-    showError("加载player.txt时出现错误,有可能文件被锁定或删除")
-    pygame.quit()
-    sys.exit()
-message_summon("System", "GameStart")
+def gameInit():
+    GameVar.songChoose.set_imgs()
+    # GameVar.songChoose.infoInit()
+    try:
+        load()
+    except:
+        showError("加载player.txt时出现错误,有可能文件被锁定或删除")
+        pygame.quit()
+        sys.exit()
+    message_summon("System", "GameStart")
 
-try:
-    GameVar.setting.load_settings()
-except:
-    showError("加载settings.txt时出现错误，有可能文件被锁定或删除")
-    pygame.quit()
-    sys.exit()
+    try:
+        GameVar.setting.load_settings()
+    except:
+        showError("加载settings.txt时出现错误，有可能文件被锁定或删除")
+        pygame.quit()
+        sys.exit()
+    loadNote()
+    GameVar.songChoose.init()
 
-loadNote()
+gameInit()
 while True:
     pygame.display.set_caption("八方" + VERSION + " fps:" + str(GameVar.fpsClock.get_fps()))
 
