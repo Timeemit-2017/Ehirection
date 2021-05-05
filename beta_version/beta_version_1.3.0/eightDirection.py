@@ -5,7 +5,6 @@ Created on 2020-3-24
 '''
 import pygame
 import random, time, sys, os, math
-import tkinter as tk
 import tkinter.messagebox
 from pygame.locals import *
 
