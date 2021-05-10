@@ -1,4 +1,0 @@
-1."Start>>>"(1054,657)
-2.blank_data(332,73)
-3.first_item_data(335,76)
-4.this_item_1(591,311)
