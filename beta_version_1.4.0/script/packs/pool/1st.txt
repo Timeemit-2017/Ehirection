@@ -1,0 +1,1 @@
+["八方1",Pool_object(Star_light,"gold")]
