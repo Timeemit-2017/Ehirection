@@ -20,7 +20,7 @@
 
 便利柜是一个诞生之初就有打算的一个东西，甚至于我古早时期的scratch版本的八方已经做出来了，不过并不好看。如图：
 
-![在Scratch中的便利柜界面](C:\Users\hdy\Documents\PythonScripts\ehirection\README\bianLiGuiInScratch.png)
+![在Scratch中的便利柜界面](README/bianLiGuiInScratch.png)
 
 **2、活动系统**
 
