@@ -102,12 +102,15 @@ click.set_volume(0.2)
 click2 = pygame.mixer.Sound("sounds/click2.wav")
 click2.set_volume(0.2)
 
-pygame.key.set_repeat()
+setIndex = 0  # 当前激活的设置按钮在GameVar.setting.settings中的索引
 
+pygame.key.set_repeat()  # 在程序一开始设置不让键盘按键重复加入事件序列（虽然没用但会使我安心）
+
+# 在程序一开始发送一个屏幕更新事件，有可能程序正式开始执行后不会发送（兴许是pygame 2.0的问题）
 pygame.event.post(pygame.event.Event(VIDEORESIZE, size=(WIDTH, HEIGHT)))
 
-
-def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=0, ):
+# 一个没有用到的，未完工的非线性运动函数
+def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=0):
     Ax = orginPos[0]
     Bx = ToPos[0]
     Ay = orginPos[1]
@@ -118,10 +121,9 @@ def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=
     print(magnitude)
     maxSpeed = magnitude / timeNeed * 2
 
-
-# 创建handleEvent方法
+# 处理pygame事件队列的方法
 def handleEvent():
-    global canvas, die, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, BGblack, E_EVENTS, E_MOUSE_POS, E_KEY_PRESSED, SCREENTAG
+    global canvas, die, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, BGblack, E_EVENTS, E_MOUSE_POS, E_KEY_PRESSED, SCREENTAG, setIndex
     # 基础常量
     E_EVENTS = pygame.event.get()
     E_MOUSE_POS = pygame.mouse.get_pos()
@@ -216,12 +218,6 @@ def handleEvent():
                     min_item = item
                     min_item_land_x = item.land_x
 
-            # print(max_land_x, min_land_x)
-            # for item in GameVar.lobbyObjects:
-            #     if item.item and item.land_x < min_land_x - item.land_width:
-            #         left_passer = False
-            #     if item.item and item.land_x > max_land_x + item.land_width:
-            #         right_passer = False
             middle_line = 8
             # print(min_item.land_x, max_item.land_x)
             if min_item.land_x > middle_line - min_item.land_width / 2:
@@ -290,20 +286,25 @@ def handleEvent():
                 THIS_SET.select = False
                 GameVar.states = GameVar.STATES["LOBBY"]
                 return
-            if not THIS_SET.select:
-                if event.type == KEYUP and event.key == K_UP:
-                    SETTING.setting_index_switch(-1)
-                elif event.type == KEYUP and event.key == K_DOWN:
-                    SETTING.setting_index_switch(1)
-                if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0],
-                                                                                               event.pos[1], 1, 1):
-                    THIS_SET.select = True
-            else:
-                if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0],
-                                                                                               event.pos[1], 1, 1):
-                    THIS_SET.select = False
-                elif event.type == KEYUP:
-                    THIS_SET.input(event.key)
+            elif event.type == MOUSEWHEEL:
+                # message_summon("System", str(event))
+                result = GameVar.setting.step(event.y, HEIGHT)
+                if result:
+                    message_summon("System", result)
+            if event.type == MOUSEBUTTONDOWN and event.button == 1:
+                for i in range(len(GameVar.setting.settings)):
+                    set = GameVar.setting.settings[i]
+                    if set.checkRange(E_MOUSE_POS[0], E_MOUSE_POS[1], 1, 1):
+                        if set.select:
+                            set.select = False
+                        else:
+                            set.select = True
+                            setIndex = i
+                            message_summon("System", str(i))
+            elif event.type == KEYUP and GameVar.setting.settings[setIndex].select:
+                message_summon("System", "setKey")
+                GameVar.setting.settings[setIndex].input(event.key)
+
         elif GameVar.states == GameVar.STATES["SONGS_CHOOSE"]:
             sc = GameVar.songChoose
             if event.type == KEYDOWN and event.key == KEYS["songc_up"]:
@@ -1284,6 +1285,7 @@ class GameVar():
     lobbyObjects = [LobbyObject(0, 16, 62, 46, "land"), LobbyItem(0, 8, 22, 34, "bianligui"),
                     LobbyItem(8, 6, 18, 18, "box"), LobbyItem(20, 4, 14, 27, "musicer"),
                     LobbyObject(0, 0, 62, 62, "fog"), LobbyObject(32, 22, 30, 38, "cover")]
+                    # ,LobbyItem(30, 5, 50, 50, "_yellow")]
     # 屏幕的x
     screen_x = 0
 
@@ -1629,7 +1631,9 @@ def hall_main():
 
 
 def setting_main():
-    GameVar.setting.main(canvas)
+    GameVar.setting.mainBeforeDie(canvas)
+    canvas.blit(die, (0, 0))
+    GameVar.setting.mainAfterDie(canvas, pygame.mouse.get_pos())
 
 
 def message_summon(come, message):
@@ -1756,7 +1760,7 @@ def dataHandle(resourse):
     result = result.lstrip()
     return result
 
-
+# 程序主函数
 def control():
     global canvas
     # 循环前执行
@@ -1929,6 +1933,7 @@ def gameInit():
         sys.exit()
     message_summon("System", "GameStart")
 
+    GameVar.setting.load_settings()
     try:
         GameVar.setting.load_settings()
     except:

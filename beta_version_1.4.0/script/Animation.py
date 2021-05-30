@@ -37,7 +37,7 @@ class Sprite(object):
         self.index = 0
         self.interval = interval
         self.lastTime = time.time()
-
+        self.minus_size = (self.position[0] / 1280, self.position[1] / 720)
     def draw(self, target):
         draw_range = (self.pos[self.index][0], self.pos[self.index][1], self.size[0], self.size[1])
         target.blit(self.source, self.position, draw_range)
@@ -62,8 +62,7 @@ class Sprite(object):
         self.lastTime = time.time()
 
     def set_pos(self,screen_size):
-        minus_size = (self.position[0] / 1280, self.position[1] / 720)
-        self.position = (screen_size[0] * minus_size[0], screen_size[1] * minus_size[1])
+        self.position = (screen_size[0] * self.minus_size[0], screen_size[1] * self.minus_size[1])
 
     def ifDoAction(self,lastTime, interval):
         if lastTime == 0:

@@ -52,7 +52,7 @@ class LobbyItem(LobbyObject):
         self.y += direction * 1 * self.speed * self.times * last_fps_time
         self.land_x += direction * 1 * self.speed * last_fps_time
     def outOfBounds(self):
-        if self.land_x < 0 - self.land_width or self.land_x > 16:
+        if self.land_x < -3 - self.land_width or self.land_x > 16:
             return True
     def checkRange(self, x, y, width, height):
         return x > self.x and x < self.x + self.width and \

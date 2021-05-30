@@ -19,14 +19,14 @@ class PoolButton(Sprite):
     def __init__(self,source,position,pos,size,text):
         Sprite.__init__(self, source, position, pos, size, 0)
         self.text = text
+        self.minus_size = (self.position[0] / 1920, self.position[1] / 1080)
     def animation(self, mouse_press):
         if mouse_press == True:
             self.index = 1
         else:
             self.index = 0
     def set_pos(self,screen_size):
-        minus_size = (self.position[0] / 1920, self.position[1] / 1080)
-        self.position = (screen_size[0] * minus_size[0], screen_size[1] * minus_size[1])
+        self.position = (screen_size[0] * self.minus_size[0], screen_size[1] * self.minus_size[1])
     def checkRange(self, pos, size=(1, 1)):
         x = pos[0]
         y = pos[1]
@@ -39,10 +39,10 @@ class PoolButton(Sprite):
 
 class Preview():
     def __init__(self, img, pos, word, word_dire,text=None):
-        self.img = img #放大后的图片，不支持自己放大
-        self.pos = pos #相对于Pool.img的坐标
-        self.word = word #一张图片
-        self.text = text #使用三引号的字符串（可选）
+        self.img = img  # 放大后的图片，不支持自己放大
+        self.pos = pos  # 相对于Pool.img的坐标
+        self.word = word  # 一张图片
+        self.text = text  # 使用三引号的字符串（可选）
         self.word_surface = pygame.Surface((self.word.get_size[0], self.word.get_size[1]))
         self.word_dire = word_dire # 1 或 -1
         self.word_pos = (0, self.word_dire * self.word_surface.get_width())
