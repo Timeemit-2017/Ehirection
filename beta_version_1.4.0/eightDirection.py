@@ -45,7 +45,7 @@ SIZE = (WIDTH, HEIGHT)
 # HEIGHT = 720
 WIDTH_2 = WIDTH / 2
 HEIGHT_2 = HEIGHT / 2
-VERSION = "1.3.0"
+VERSION = "1.4.0.3"
 
 pygame.display.set_icon(pygame.image.load("eightDirection.ico"))
 # os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0,0)
@@ -109,6 +109,7 @@ pygame.key.set_repeat()  # 在程序一开始设置不让键盘按键重复加�
 # 在程序一开始发送一个屏幕更新事件，有可能程序正式开始执行后不会发送（兴许是pygame 2.0的问题）
 pygame.event.post(pygame.event.Event(VIDEORESIZE, size=(WIDTH, HEIGHT)))
 
+
 # 一个没有用到的，未完工的非线性运动函数
 def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=0):
     Ax = orginPos[0]
@@ -121,9 +122,11 @@ def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=
     print(magnitude)
     maxSpeed = magnitude / timeNeed * 2
 
+
 # 处理pygame事件队列的方法
 def handleEvent():
-    global canvas, die, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, BGblack, E_EVENTS, E_MOUSE_POS, E_KEY_PRESSED, SCREENTAG, setIndex
+    global canvas, die, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, SIZE, BGblack, E_EVENTS, E_MOUSE_POS, E_KEY_PRESSED, \
+        SCREENTAG, setIndex
     # 基础常量
     E_EVENTS = pygame.event.get()
     E_MOUSE_POS = pygame.mouse.get_pos()
@@ -154,6 +157,7 @@ def handleEvent():
             HEIGHT = event.size[1]
             WIDTH_2 = WIDTH / 2
             HEIGHT_2 = HEIGHT / 2
+            SIZE = (WIDTH, HEIGHT)
 
             GameVar.itemChoose.item_choose_x = (WIDTH - 1280) / 2
             GameVar.itemChoose.compensatory = (WIDTH_2 - 640, HEIGHT_2 - 360)
@@ -286,24 +290,51 @@ def handleEvent():
                 THIS_SET.select = False
                 GameVar.states = GameVar.STATES["LOBBY"]
                 return
-            elif event.type == MOUSEWHEEL:
-                # message_summon("System", str(event))
-                result = GameVar.setting.step(event.y, HEIGHT)
-                if result:
-                    message_summon("System", result)
-            if event.type == MOUSEBUTTONDOWN and event.button == 1:
-                for i in range(len(GameVar.setting.settings)):
-                    set = GameVar.setting.settings[i]
-                    if set.checkRange(E_MOUSE_POS[0], E_MOUSE_POS[1], 1, 1):
-                        if set.select:
-                            set.select = False
-                        else:
-                            set.select = True
-                            setIndex = i
-                            message_summon("System", str(i))
-            elif event.type == KEYUP and GameVar.setting.settings[setIndex].select:
-                message_summon("System", "setKey")
-                GameVar.setting.settings[setIndex].input(event.key)
+            elif event.type == KEYUP and event.key == K_b:
+                if GameVar.settingsOldOrNew == "Old":
+                    GameVar.setting.changeDisplayType("New")
+                    GameVar.settingsOldOrNew = "New"
+                else:
+                    GameVar.setting.changeDisplayType("Old")
+                    GameVar.settingsOldOrNew = "Old"
+                for set in SETTING.settings:
+                    set.button.changeType(GameVar.settingsOldOrNew, SIZE)
+                GameVar.setting.change_scale(SIZE)
+
+            if GameVar.settingsOldOrNew == "New":
+                if event.type == MOUSEWHEEL:
+                    # message_summon("System", str(event))
+                    result = GameVar.setting.step(event.y, HEIGHT)
+                    if result:
+                        message_summon("System", result)
+                elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+                    for i in range(len(GameVar.setting.settings)):
+                        set = GameVar.setting.settings[i]
+                        if set.checkRange(E_MOUSE_POS[0], E_MOUSE_POS[1], 1, 1):
+                            if set.select:
+                                set.select = False
+                            else:
+                                set.select = True
+                                setIndex = i
+                                message_summon("System", str(i))
+                elif event.type == KEYUP and GameVar.setting.settings[setIndex].select:
+                    message_summon("System", "setKey")
+                    GameVar.setting.settings[setIndex].input(event.key)
+            else:
+                if not THIS_SET.select:
+                    if event.type == KEYUP and event.key == K_UP:
+                        SETTING.setting_index_switch(-1)
+                    elif event.type == KEYUP and event.key == K_DOWN:
+                        SETTING.setting_index_switch(1)
+                    if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0],
+                                                                                                   event.pos[1], 1, 1):
+                        THIS_SET.select = True
+                else:
+                    if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0],
+                                                                                                   event.pos[1], 1, 1):
+                        THIS_SET.select = False
+                    elif event.type == KEYUP:
+                        THIS_SET.input(event.key)
 
         elif GameVar.states == GameVar.STATES["SONGS_CHOOSE"]:
             sc = GameVar.songChoose
@@ -405,17 +436,19 @@ class Font():
 
 
 def writeText(text, position, color=(255, 255, 255, 255), alpha=255, font=Font.text, is_middle=False,
-              is_right_bottom=None, move_pos=None):
+              is_right_bottom=False, is_right=False, move_pos=None, is_rect_and_color=(False, (255, 0, 0)), is_return_size=False):
     text = font.render(text, True, color)
     if is_middle:
         pos = (position[0] - text.get_width() / 2, position[1] - text.get_height() / 2)
         position = pos
-    elif is_right_bottom != None:
-        pos = (
-            position[0] + is_right_bottom[0] - text.get_width(), position[1] + is_right_bottom[1] - text.get_height())
-        # pos = (position[0] - text.get_width(), position[1] - text.get_height())
+    elif is_right_bottom:
+        pos = (position[0] - text.get_width(),
+               position[1] - text.get_height())
         position = pos
-    elif move_pos != None:
+    elif is_right:
+        pos = (position[0] - text.get_width(), position[1])
+        position = pos
+    elif move_pos is not None:
         pos = (position[0] + move_pos[0], position[1] + move_pos[1])
         position = pos
     if not alpha == 255:
@@ -423,8 +456,13 @@ def writeText(text, position, color=(255, 255, 255, 255), alpha=255, font=Font.t
         surface_under.blit(text, (0, 0))
         surface_under.set_alpha(alpha)
         canvas.blit(surface_under, position)
-        return
-    canvas.blit(text, position)
+    else:
+        canvas.blit(text, position)
+    if is_rect_and_color[0]:
+        pygame.draw.rect(canvas, is_rect_and_color[1], (position[0], position[1], text.get_width(), text.get_height()),
+                         width=1)
+    if is_return_size:
+        return text.get_size()
 
 
 class Bgm():
@@ -524,7 +562,7 @@ class Message(EHRTObject):
         #     if self.y <= -15:
         #         GameVar.messages.remove(self)
         self.alpha -= 2
-        if self.alpha < 0:
+        if self.alpha <= 0:
             GameVar.messages.remove(self)
 
 
@@ -949,12 +987,14 @@ class Enemy(GameObject):
             result = "Unknown"
         message_summon("System.Enemy.judge", "{0} distance:".format(result) + str(dis))
         GameVar.judgeResult.append(result)
+        GameVar.judgeResult.append("Combo")
         GameVar.judgeResult.changeDisplay(result)
 
     def animation(self):
         result = self.ani.animation(canvas, 0, 4)
         if result == "Done":
             return "Done"
+
 
 class JudgeResult():
     def __init__(self, result, canvas):
@@ -963,15 +1003,22 @@ class JudgeResult():
         self.bad = 0
         self.good = 0
         self.perfect = 0
-        self.judges = {"Bad": self.bad, "Good": self.good, "Perfect": self.perfect}
+        self.combo = 0
+        self.judges = {"Bad": self.bad, "Good": self.good, "Perfect": self.perfect, "Combo": self.combo}
+        self.alpha = 255
+        self.text_size = writeText(self.result, (WIDTH - 3, 5), alpha=self.alpha, is_right=True, is_return_size=True)
 
     def draw(self):
+        writeText("Combo: " + str(self.combo), (WIDTH - 3, 7 + self.text_size[1]), is_right=True)
         if self.result == "None":
             return
-        writeText(self.result, (WIDTH_2, 50), is_middle=True)
+        if self.alpha > 0:
+            writeText(self.result, (WIDTH - 3, 5), alpha=self.alpha, is_right=True, is_return_size=True)
+
 
     def changeDisplay(self, result):
         self.result = result
+        self.alpha = 255
 
     def append(self, type, num=1):
         self.judges[type] += num
@@ -981,6 +1028,7 @@ class JudgeResult():
         self.bad = self.judges["Bad"]
         self.good = self.judges["Good"]
         self.perfect = self.judges["Perfect"]
+        self.combo = self.judges["Combo"]
 
     def outPut(self):
         return self.judges
@@ -990,9 +1038,14 @@ class JudgeResult():
         self.bad = 0
         self.good = 0
         self.perfect = 0
-        self.judges = {"Bad": self.bad, "Good": self.good, "Perfect": self.perfect}
+        self.combo = 0
+        self.judges = {"Bad": self.bad, "Good": self.good, "Perfect": self.perfect, "Combo": self.combo}
 
 
+    def delete(self):
+        self.alpha -= 2
+        if self.alpha <= 0:
+            self.alpha = 0
 
 class Item_choose():
     def __init__(self):
@@ -1066,10 +1119,10 @@ class Item_choose():
 
     def item_draw_1(self):
         for item in GameVar.backpack:
-            pos = (
-                335 + self.compensatory[0] + self.index * (100 + 3), 76 + self.compensatory[1] + self.line * (100 + 3))
+            pos = (335 + self.compensatory[0] + self.index * (100 + 3),
+                   76 + self.compensatory[1] + self.line * (100 + 3))
             canvas.blit(item.img, pos)
-            writeText(str(item.number), pos, is_right_bottom=(100, 100))
+            writeText(str(item.number), (pos[0] + 100, pos[1] + 100), is_right_bottom=True)
             self.index += 1
             if self.index > 5:
                 self.index = 0
@@ -1285,14 +1338,16 @@ class GameVar():
     lobbyObjects = [LobbyObject(0, 16, 62, 46, "land"), LobbyItem(0, 8, 22, 34, "bianligui"),
                     LobbyItem(8, 6, 18, 18, "box"), LobbyItem(20, 4, 14, 27, "musicer"),
                     LobbyObject(0, 0, 62, 62, "fog"), LobbyObject(32, 22, 30, 38, "cover")]
-                    # ,LobbyItem(30, 5, 50, 50, "_yellow")]
+    # ,LobbyItem(30, 5, 50, 50, "_yellow")]
     # 屏幕的x
     screen_x = 0
 
     home = Home()
 
+    settingsOldOrNew = "Old"
+
     # 设置界面
-    setting = Setting((WIDTH, HEIGHT))
+    setting = Setting((WIDTH, HEIGHT), settingsOldOrNew)
 
     # 大厅力控制组
     lobbyForceControl = LobbyForceControl()
@@ -1351,7 +1406,7 @@ class DMcomponent():
         self.set()
 
     def set(self):
-        dis = 130
+        dis = 85
         if GameVar.gamemode == "yellow":
             if self.number == 0:
                 self.x = GameVar.hero.x
@@ -1468,10 +1523,12 @@ def commentDelete():
                     GameVar.enemies.remove(enemy)
                     return
 
+
 def commentAnimation():
     for enemy in GameVar.enemy_animation:
         if enemy.animation() == "Done":
             GameVar.enemy_animation.remove(enemy)
+
 
 def song_init():
     GameVar.itemChoose.this_item = -1
@@ -1631,9 +1688,12 @@ def hall_main():
 
 
 def setting_main():
-    GameVar.setting.mainBeforeDie(canvas)
-    canvas.blit(die, (0, 0))
-    GameVar.setting.mainAfterDie(canvas, pygame.mouse.get_pos())
+    if GameVar.settingsOldOrNew == "New":
+        GameVar.setting.mainBeforeDie(canvas)
+        canvas.blit(die, (0, 0))
+        GameVar.setting.mainAfterDie(canvas, pygame.mouse.get_pos())
+    else:
+        GameVar.setting.main_old(canvas)
 
 
 def message_summon(come, message):
@@ -1654,8 +1714,7 @@ def message_state_change():
 def message_check_y():
     i = 0
     for message in GameVar.messages:
-        if message.can_delete == False:
-            message.y = i * 15
+        message.y = i * 15
         i += 1
 
 
@@ -1671,6 +1730,7 @@ def message_delete():
 
 
 def message_main():
+    message_delete()
     if not GameVar.if_message:
         GameVar.messages = []
         return
@@ -1679,7 +1739,6 @@ def message_main():
         return
     message_check_y()
     message_draw()
-    message_delete()
 
 
 # 切换state
@@ -1759,6 +1818,7 @@ def dataHandle(resourse):
     result = resourse.rstrip()
     result = result.lstrip()
     return result
+
 
 # 程序主函数
 def control():
@@ -1863,6 +1923,7 @@ def control():
         commentDelete()
         commentAnimation()
         GameVar.judgeResult.draw()
+        GameVar.judgeResult.delete()
         if not GameVar.item_use == "null":
             item_main(GameVar.item_use.name)
         GameVar.attrs = [str(GameVar.hero.life),
@@ -1933,13 +1994,13 @@ def gameInit():
         sys.exit()
     message_summon("System", "GameStart")
 
-    GameVar.setting.load_settings()
-    try:
-        GameVar.setting.load_settings()
-    except:
-        showError("加载settings.txt时出现错误，有可能文件被锁定或删除")
-        pygame.quit()
-        sys.exit()
+    GameVar.setting.load_settings(GameVar.settingsOldOrNew)
+    # try:
+    #     GameVar.setting.load_settings(GameVar.settingsOldOrNew)
+    # except:
+    #     showError("加载settings.txt时出现错误，有可能文件被锁定或删除")
+    #     pygame.quit()
+    #     sys.exit()
     loadNote()
     GameVar.songChoose.init()
 

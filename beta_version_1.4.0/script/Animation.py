@@ -55,7 +55,6 @@ class Sprite(object):
             self.index = 0
             return "Done"
 
-
     def reset(self):
         self.state = 0
         self.index = 0
