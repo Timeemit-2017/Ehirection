@@ -2,7 +2,7 @@ import pygame, time
 from pygame.locals import *
 
 
-class SettingVar():
+class SettingVar:
     font_load = "ttfs/noto/NotoSansHans-Light.otf"
     font_size = 50
     font_color = (255, 255, 255)
@@ -14,12 +14,16 @@ class SettingVar():
                     "itemc_down": K_DOWN, "itemc_left": K_LEFT,
                     "lobby_left": K_LEFT, "lobby_right": K_RIGHT,
                     "game_exit": K_F1, "switch_message": K_m,
-                    "start_indexDesigner": K_F2
+                    "start_indexDesigner": K_F2, "change_window": K_F3
                     }
     keys = keys_default
+    chooses_default = {"window_size": (1280, 720)}
+    chooses = chooses_default
+    bools_default = {"setting_display_mode": False}
+    bools = bools_default
 
 
-class Setting():
+class Setting:
     def __init__(self, video_size, orginDisplayType):
         self.settings = []
         self.setting_index = 0
@@ -44,17 +48,17 @@ class Setting():
             self.pictures.append(image)
 
     def changeDisplayType(self, target):
-        if target == "Old":
+        if target is False:
             self.position = [8 * SettingVar.times, 8 * SettingVar.times]
         else:
             self.position = [8 * SettingVar.times, 1 * SettingVar.times]
         self.position_ratio = [self.position[0] / self.video_size[0], self.position[1] / self.video_size[1]]
 
-    def draw(self, canvas, mousePos="Old"):
-        if mousePos == "Old":
+    def draw(self, canvas, mousePos=False, page=0):
+        if mousePos is False:  # 老版排版
             self.drawBg(canvas)
             self.settings[self.setting_index].draw(canvas, self.position, self.position_orgin)
-        else:
+        else:  # 新版排版
             for i in range(len(self.settings)):
                 self.settings[i].draw(canvas,
                                       (self.position[0], self.position[1] + i * (self.space + self.textHeight)),
@@ -83,6 +87,7 @@ class Setting():
         canvas.blit(self.pictures[self.image_index], (0, 0))
 
     def backGroundSwitch(self):
+        """切换背景（数字层面）"""
         if not self.ifDoAction(self.lastTime, self.interval):
             return
         self.lastTime = time.time()
@@ -153,7 +158,7 @@ class Setting():
 class Set(object):
     def __init__(self, title, target, screen_size):
         self.title = title
-        self.target = target
+        self.target = target  # 值的名字
         self.attribute = 0
         self.number = 0
         self.text = 0
@@ -182,11 +187,65 @@ class Set(object):
         canvas.blit(self.text, self.pos)
 
 
+class SetButton:
+    def __init__(self, type, screen_size):
+        self.type = type
+        if type == "small" or type:
+            self.img_resourse = pygame.image.load("images/setting/buttons/small_button.png")
+            self.x = 51
+            self.y = 10
+            self.width = 9
+            self.height = 4
+        elif type == "big" or not type:
+            self.img_resourse = pygame.image.load("images/setting/buttons/big_button.png")
+            self.x = 42
+            self.y = 8
+            self.width = 16
+            self.height = 6
+        times = SettingVar.times
+        self.x *= times
+        self.y *= times
+        self.width *= times
+        self.height *= times
+        self.pos_ratio = (self.x / screen_size[0], self.y / screen_size[1])
+        self.img = pygame.transform.scale(self.img_resourse, (self.width, self.height))
+        self.alpha = 0
+
+    def changeType(self, target, screen_size):
+        if target is False:
+            target = "big"
+        else:
+            target = "small"
+        self.__init__(target, screen_size)
+
+    def draw(self, canvas, pos=False, mousePos=False):
+        if pos is False and mousePos is False:
+            canvas.blit(self.img, (self.x, self.y))
+        else:
+            self.x = pos[0]
+            self.y = pos[1]
+            if self.checkRange(mousePos[0], mousePos[1], 1, 1):
+                self.alpha += 25
+                if self.alpha >= 255:
+                    self.alpha = 255
+                    canvas.blit(self.img, pos)
+                    return
+            else:
+                self.alpha = 122
+            surface_under = pygame.Surface((self.img.get_width(), self.img.get_height()), SRCALPHA).convert()
+            surface_under.blit(self.img, (0, 0))
+            surface_under.set_alpha(self.alpha)
+            canvas.blit(surface_under, pos)
+
+    def checkRange(self, x, y, width, height):
+        return self.x < x < self.x + self.width and \
+               self.y < y < self.y + self.height
+
 class KeySet(Set):
     def __init__(self, title, target, button_type, screen_size):
         Set.__init__(self, title, target, screen_size)
         self.set_attribute(SettingVar.keys)
-        self.button = KeySetButton(button_type, screen_size)
+        self.button = SetButton(button_type, screen_size)
         self.lastTime = 0
         self.interval = 0.3
         self.key_text_resourse = pygame.key.name(self.attribute)
@@ -224,10 +283,10 @@ class KeySet(Set):
     def checkRange(self, x, y, width, height):
         return self.button.checkRange(x, y, width, height)
 
-    def draw(self, canvas, position, position_orgin, mousePos="Old"):
+    def draw(self, canvas, position, position_orgin, mousePos=False):
         text_size = self.text.get_size()
         key_text_size = self.key_text.get_size()
-        if mousePos == "Old":
+        if mousePos is False:
             self.pos = (position_orgin[0], position_orgin[1] + text_size[1] / 2)
             self.button.draw(canvas)
         else:
@@ -238,56 +297,12 @@ class KeySet(Set):
                                     self.button.y + self.button.height / 2 - key_text_size[1] / 2 - 4))
 
 
-class KeySetButton():
-    def __init__(self, type, screen_size):
-        self.type = type
-        if type == "small" or not type:
-            self.img_resourse = pygame.image.load("images/setting/buttons/small_button.png")
-            self.x = 51
-            self.y = 10
-            self.width = 9
-            self.height = 4
-        elif type == "big" or type:
-            self.img_resourse = pygame.image.load("images/setting/buttons/big_button.png")
-            self.x = 42
-            self.y = 8
-            self.width = 16
-            self.height = 6
-        times = SettingVar.times
-        self.x *= times
-        self.y *= times
-        self.width *= times
-        self.height *= times
-        self.pos_ratio = (self.x / screen_size[0], self.y / screen_size[1])
-        self.img = pygame.transform.scale(self.img_resourse, (self.width, self.height))
-        self.alpha = 0
+class ChooseSet(Set):
+    def __init__(self, title, target, buttontype, screen_size):
+        Set.__init__(self, title, target, screen_size)
+        self.set_attribute(SettingVar.chooses)
+        self.button = ChooseSetButton(buttontype, screen_size)
 
-    def changeType(self, target, screen_size):
-        if target == "Old":
-            target = "big"
-        else:
-            target = "small"
-        self.__init__(target, screen_size)
-
-    def draw(self, canvas, pos="Old", mousePos="Old"):
-        if pos == "Old" and mousePos == "Old":
-            canvas.blit(self.img, (self.x, self.y))
-        else:
-            self.x = pos[0]
-            self.y = pos[1]
-            if self.checkRange(mousePos[0], mousePos[1], 1, 1):
-                self.alpha += 25
-                if self.alpha >= 255:
-                    self.alpha = 255
-                    canvas.blit(self.img, pos)
-                    return
-            else:
-                self.alpha = 122
-            surface_under = pygame.Surface((self.img.get_width(), self.img.get_height()), SRCALPHA).convert()
-            surface_under.blit(self.img, (0, 0))
-            surface_under.set_alpha(self.alpha)
-            canvas.blit(surface_under, pos)
-
-    def checkRange(self, x, y, width, height):
-        return self.x < x < self.x + self.width and \
-               self.y < y < self.y + self.height
+class ChooseSetButton(SetButton):
+    def __init__(self, buttontype, screen_size):
+        SetButton.__init__(self, buttontype, screen_size)

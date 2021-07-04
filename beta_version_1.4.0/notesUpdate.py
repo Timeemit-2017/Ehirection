@@ -71,7 +71,7 @@ def startTrans():
             file.write(
                 "name : " + songNames[i] + "\n" +
                 "littleName : " + songLittleNames[i] + "\n" +
-                "path : " + songs[i] + "\n" +
+                "direPath : " + songs[i] + "\n" +
                 "cover : " + covers[i] + "\n"
                 "author : " + author + " \n" +
                 "noteDesigner : " + noteDesigner + "\n" +

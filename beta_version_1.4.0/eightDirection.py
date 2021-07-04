@@ -32,23 +32,37 @@ from script.Setting import *
 from script.Animation import *
 from script.Pool import *
 from script.Box import *
+from script.Bgm import *
+from script.basic import *
+from script.PotLight import PotLight
 
 # 初始化
 pygame.init()
+
+def SIZEUpdate(size):
+    global SIZE, HEIGHT, WIDTH, HEIGHT_2, WIDTH_2
+    SIZE = size
+    WIDTH = size[0]
+    HEIGHT = size[1]
+    WIDTH_2 = WIDTH / 2
+    HEIGHT_2 = HEIGHT / 2
+
+def canvasUpdate():
+    global SIZE, SCREENTAG, BGblack
+    canvas = pygame.display.set_mode((WIDTH, HEIGHT), SCREENTAG)
+    BGblack = canvas.get_rect()
 
 infoObject = pygame.display.Info()
 
 WIDTH = infoObject.current_w
 HEIGHT = infoObject.current_h
 SIZE = (WIDTH, HEIGHT)
-# WIDTH = 1280
-# HEIGHT = 720
-WIDTH_2 = WIDTH / 2
-HEIGHT_2 = HEIGHT / 2
-VERSION = "1.4.0.3"
+SIZE = (1280, 720)
+SIZEUpdate(SIZE)
+VERSION = " develop 1.4.0.4"
 
 pygame.display.set_icon(pygame.image.load("eightDirection.ico"))
-# os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0,0)
+# os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0, 0)
 SCREENTAG = RESIZABLE
 canvas = pygame.display.set_mode((WIDTH, HEIGHT), SCREENTAG)
 canvas.fill((255, 255, 255, 255))
@@ -122,6 +136,30 @@ def unRope(thisSpeed=0, orginPos=(0, 0), thisPos=(0, 0), ToPos=(0, 0), timeNeed=
     print(magnitude)
     maxSpeed = magnitude / timeNeed * 2
 
+def displayUpdate():
+    GameVar.itemChoose.item_choose_x = (WIDTH - 1280) / 2
+    GameVar.itemChoose.compensatory = (WIDTH_2 - 640, HEIGHT_2 - 360)
+    GameVar.item_choose_highlight.compensatory = GameVar.itemChoose.compensatory
+
+    GameVar.hero.x = 615 + WIDTH_2 - 640
+    GameVar.hero.y = 335 + HEIGHT_2 - 360
+    GameVar.hero.main_rect.topleft = (GameVar.hero.x, GameVar.hero.y)
+    GameVar.hero.rect.topleft = (GameVar.hero.x, GameVar.hero.y + GameVar.hero.height)
+
+    if not len(GameVar.DMcomp) == 0:
+        for component in GameVar.DMcomp:
+            component.set()
+
+    GameVar.setting.change_scale((WIDTH, HEIGHT))
+
+    GameVar.box_animation.change_scale((WIDTH, HEIGHT))
+    GameVar.box_result.box_sprite.set_pos((WIDTH, HEIGHT))
+
+    for button in GameVar.box_animation.buttons:
+        button.set_pos((WIDTH, HEIGHT))
+
+    die = pygame.Surface((WIDTH, HEIGHT), SRCALPHA | HWSURFACE).convert()
+    die.set_alpha(128)
 
 # 处理pygame事件队列的方法
 def handleEvent():
@@ -152,40 +190,21 @@ def handleEvent():
                 window.withdraw()
                 if tkinter.messagebox.askokcancel(title="询问", message="是否打开谱面编辑器？"):
                     startIndexDesigner()
+            elif event.type == KEYUP and event.key == KEYS["change_window"]:
+                if SCREENTAG == FULLSCREEN:
+                    SCREENTAG = RESIZABLE
+                else:
+                    SCREENTAG = FULLSCREEN
+                    SIZEUpdate((infoObject.current_w, infoObject.current_h))
+                canvasUpdate()
         if event.type == VIDEORESIZE:
-            WIDTH = event.size[0]
-            HEIGHT = event.size[1]
-            WIDTH_2 = WIDTH / 2
-            HEIGHT_2 = HEIGHT / 2
-            SIZE = (WIDTH, HEIGHT)
+            SIZEUpdate(event.size)
 
-            GameVar.itemChoose.item_choose_x = (WIDTH - 1280) / 2
-            GameVar.itemChoose.compensatory = (WIDTH_2 - 640, HEIGHT_2 - 360)
-            GameVar.item_choose_highlight.compensatory = GameVar.itemChoose.compensatory
-
-            GameVar.hero.x = 615 + WIDTH_2 - 640
-            GameVar.hero.y = 335 + HEIGHT_2 - 360
-            GameVar.hero.main_rect.topleft = (GameVar.hero.x, GameVar.hero.y)
-            GameVar.hero.rect.topleft = (GameVar.hero.x, GameVar.hero.y + GameVar.hero.height)
-
-            if not len(GameVar.DMcomp) == 0:
-                for component in GameVar.DMcomp:
-                    component.set()
-
-            GameVar.setting.change_scale((WIDTH, HEIGHT))
-
-            GameVar.box_animation.change_scale((WIDTH, HEIGHT))
-            GameVar.box_result.box_sprite.set_pos((WIDTH, HEIGHT))
-
-            for button in GameVar.box_animation.buttons:
-                button.set_pos((WIDTH, HEIGHT))
-
-            die = pygame.Surface((WIDTH, HEIGHT), SRCALPHA | HWSURFACE).convert()
-            die.set_alpha(128)
+            displayUpdate()
 
             # os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0, 30)
-            canvas = pygame.display.set_mode((WIDTH, HEIGHT), SCREENTAG)
-            BGblack = canvas.get_rect()
+
+            canvasUpdate()
         elif GameVar.states == GameVar.STATES["HOME_0"]:
             if event.type == KEYUP:
                 GameVar.states = GameVar.STATES["LOBBY"]
@@ -291,12 +310,12 @@ def handleEvent():
                 GameVar.states = GameVar.STATES["LOBBY"]
                 return
             elif event.type == KEYUP and event.key == K_b:
-                if GameVar.settingsOldOrNew == "Old":
-                    GameVar.setting.changeDisplayType("New")
-                    GameVar.settingsOldOrNew = "New"
+                if GameVar.settingsOldOrNew is False:
+                    GameVar.setting.changeDisplayType(True)
+                    GameVar.settingsOldOrNew = True
                 else:
-                    GameVar.setting.changeDisplayType("Old")
-                    GameVar.settingsOldOrNew = "Old"
+                    GameVar.setting.changeDisplayType(False)
+                    GameVar.settingsOldOrNew = False
                 for set in SETTING.settings:
                     set.button.changeType(GameVar.settingsOldOrNew, SIZE)
                 GameVar.setting.change_scale(SIZE)
@@ -412,80 +431,13 @@ def handleEvent():
                     GameVar.skip = 3
 
 
-# 创建是否到了画组件时间的方法
-def ifDoAction(lastTime, interval):
-    if lastTime == 0:
-        return True
-    currectTime = time.time()
-    return currectTime - lastTime >= interval
+def loading():
+    canvas.fill((0, 0, 0))
+    writeText("Loading...", (WIDTH - 5, HEIGHT - 25), canvas, is_right_bottom=True)
+    pygame.display.flip()
 
 
-def textInit(size, font):
-    font = pygame.font.Font(font, size)
-    return font
-
-
-class Font():
-    song_name = textInit(80, "ttfs/noto/NotoSansHans-Light.otf")
-    text = textInit(30, "ttfs/noto/NotoSansHans-Light.otf")
-    little_text = textInit(20, "ttfs/noto/NotoSansHans-Light.otf")
-    console = textInit(15, "ttfs/noto/NotoSansHans-Light.otf")
-    text_bold = textInit(30, "ttfs/noto/NotoSansHans-Bold.otf")
-    text_regular = textInit(30, "ttfs/noto/NotoSansHans-Regular.otf")
-    score = textInit(40, "ttfs/noto/NotoSansHans-Light.otf")
-
-
-def writeText(text, position, color=(255, 255, 255, 255), alpha=255, font=Font.text, is_middle=False,
-              is_right_bottom=False, is_right=False, move_pos=None, is_rect_and_color=(False, (255, 0, 0)), is_return_size=False):
-    text = font.render(text, True, color)
-    if is_middle:
-        pos = (position[0] - text.get_width() / 2, position[1] - text.get_height() / 2)
-        position = pos
-    elif is_right_bottom:
-        pos = (position[0] - text.get_width(),
-               position[1] - text.get_height())
-        position = pos
-    elif is_right:
-        pos = (position[0] - text.get_width(), position[1])
-        position = pos
-    elif move_pos is not None:
-        pos = (position[0] + move_pos[0], position[1] + move_pos[1])
-        position = pos
-    if not alpha == 255:
-        surface_under = pygame.Surface((text.get_width(), text.get_height()), SRCALPHA).convert()
-        surface_under.blit(text, (0, 0))
-        surface_under.set_alpha(alpha)
-        canvas.blit(surface_under, position)
-    else:
-        canvas.blit(text, position)
-    if is_rect_and_color[0]:
-        pygame.draw.rect(canvas, is_rect_and_color[1], (position[0], position[1], text.get_width(), text.get_height()),
-                         width=1)
-    if is_return_size:
-        return text.get_size()
-
-
-class Bgm():
-    def __init__(self, road, time):
-        self.road = road
-        self.time = time
-        self.lastTime = 0
-        self.interval = self.time
-
-    def set(self):
-        self.lastTime = 0
-
-    def play(self):
-        if not ifDoAction(self.lastTime, self.interval + 1):
-            return
-        self.lastTime = time.time()
-        self.bgm_init(self.road)
-        pygame.mixer.music.play()
-
-    def bgm_init(self, road):
-        pygame.mixer.init()
-        pygame.mixer.music.load(road)
-        pygame.mixer.music.set_volume(0.2)
+loading()
 
 
 class EHRTObject():
@@ -547,7 +499,7 @@ class Message(EHRTObject):
         index = GameVar.messages.index(self)
 
     def draw(self):
-        writeText(self.from_display + self.message, (self.x, self.y), (255, 255, 255), self.alpha, Font.console)
+        writeText(self.from_display + self.message, (self.x, self.y), canvas, (255, 255, 255), self.alpha, Font.console)
 
     def check_time(self):
         if not ifDoAction(self.summon_time, 1):
@@ -562,7 +514,7 @@ class Message(EHRTObject):
         #     if self.y <= -15:
         #         GameVar.messages.remove(self)
         self.alpha -= 2
-        if self.alpha <= 0:
+        if self.alpha <= 20:
             GameVar.messages.remove(self)
 
 
@@ -692,8 +644,8 @@ def turnInt(target):
     else:
         return -1
 
-
-class SongChoose():
+# 由于是record_dis变得自定义，算法需要调整！
+class SongChoose:
     def __init__(self, cph):
         self.cph = cph  # 唱片环图片
         self.cphSize = self.cph.get_size()
@@ -704,7 +656,9 @@ class SongChoose():
         self.imgs = []
         self.imgs_road = []
         # 三个唱片
-        self.record_dis = HEIGHT_2  # 两个唱片之间的距离
+        self.record_dis = HEIGHT_2 # 两个唱片之间的距离
+        if self.record_dis < self.cphHeight:
+            self.record_dis = self.cphHeight
         self.recordMain_orgin = (0, 0)  # record_main的初始位置
         self.record_m = Record(self.cph, None)  # 中间的唱片
         self.record_u = Record(self.cph, None)  # 上方的唱片
@@ -733,7 +687,7 @@ class SongChoose():
         records_set = [self.record_uu, self.record_u, self.record_m, self.record_d, self.record_dd]
         for i in range(0, len(records_set)):
             rec = records_set[i]
-            this_pos = (WIDTH_2 - self.cphWidth_2, -self.cphHeight_2 + (i - 1) * HEIGHT_2)
+            this_pos = (WIDTH_2 - self.cphWidth_2, HEIGHT_2 - self.cphHeight_2 - (2- i) * self.record_dis)
             rec.set_pos(this_pos)
             index = localNumber - 2 + i
             if index > len(self.imgs) - 1:
@@ -781,8 +735,7 @@ class SongChoose():
         self.recordUpdate()
 
     def recordCheck(self):
-        if self.records["main"].pos[1] < 0 - self.cphHeight_2 or self.records["main"].pos[
-            1] > HEIGHT - self.cphHeight_2:
+        if self.records["main"].pos[1] < HEIGHT_2 - self.cphHeight_2 - self.record_dis or self.records["main"].pos[1] > HEIGHT_2 - self.cphHeight_2 + self.record_dis:
             message_summon("System", str(self.record_m.pos) + " 判定时")
             list_temp = []
             for rec in self.records:
@@ -855,9 +808,10 @@ class SongChoose():
         self.info_thisTime = self.info_time[self.number]
 
     def draw_info(self):
-        writeText(self.info_thisName, (self.info_x - 5, self.info_y), (255, 255, 255), 255, Font.song_name)
-        writeText(self.info_thisLittleName, (self.info_x, self.info_y + 100), (255, 255, 255), 255, Font.text)
-        writeText("时长：" + self.info_thisTime, (self.info_x, self.info_y + 150), (255, 255, 255), 255, Font.little_text)
+        writeText(self.info_thisName, (self.info_x - 5, self.info_y), canvas, (255, 255, 255), 255, Font.song_name)
+        writeText(self.info_thisLittleName, (self.info_x, self.info_y + 100), canvas, (255, 255, 255), 255, Font.text)
+        writeText("时长：" + self.info_thisTime, (self.info_x, self.info_y + 150), canvas, (255, 255, 255), 255,
+                  Font.little_text)
 
     def set_imgs(self):
         # with open("data/songs.txt", encoding="gbk") as file:
@@ -874,8 +828,8 @@ class SongChoose():
             pygame.draw.rect(canvas, (255, 255, 255), (self.record_m.pos[0], self.record_m.pos[1], 360, 360), width=1)
             pygame.draw.rect(canvas, (255, 0, 255), (self.record_uu.pos[0], self.record_uu.pos[1], 360, 360), width=1)
             pygame.draw.rect(canvas, (255, 0, 0), (self.record_u.pos[0], self.record_u.pos[1], 360, 360), width=1)
-            writeText("Record_Main: " + str(self.record_m.pos), (0, 300))
-            writeText("SongChoose.start: " + str(GameVar.songChoose.start), (0, 50))
+            writeText("Record_Main: " + str(self.record_m.pos), (0, 300), canvas)
+            writeText("SongChoose.start: " + str(GameVar.songChoose.start), (0, 50), canvas)
 
     def step(self):
         self.recordStep(self.dire)
@@ -1006,15 +960,15 @@ class JudgeResult():
         self.combo = 0
         self.judges = {"Bad": self.bad, "Good": self.good, "Perfect": self.perfect, "Combo": self.combo}
         self.alpha = 255
-        self.text_size = writeText(self.result, (WIDTH - 3, 5), alpha=self.alpha, is_right=True, is_return_size=True)
+        self.text_size = writeText(self.result, (WIDTH - 3, 5), canvas, alpha=self.alpha, is_right=True,
+                                   is_return_size=True)
 
     def draw(self):
-        writeText("Combo: " + str(self.combo), (WIDTH - 3, 7 + self.text_size[1]), is_right=True)
+        writeText("Combo: " + str(self.combo), (WIDTH - 3, 7 + self.text_size[1]), canvas, is_right=True)
         if self.result == "None":
             return
         if self.alpha > 0:
-            writeText(self.result, (WIDTH - 3, 5), alpha=self.alpha, is_right=True, is_return_size=True)
-
+            writeText(self.result, (WIDTH - 3, 5), canvas, alpha=self.alpha, is_right=True, is_return_size=True)
 
     def changeDisplay(self, result):
         self.result = result
@@ -1041,11 +995,11 @@ class JudgeResult():
         self.combo = 0
         self.judges = {"Bad": self.bad, "Good": self.good, "Perfect": self.perfect, "Combo": self.combo}
 
-
     def delete(self):
         self.alpha -= 2
         if self.alpha <= 0:
             self.alpha = 0
+
 
 class Item_choose():
     def __init__(self):
@@ -1122,7 +1076,7 @@ class Item_choose():
             pos = (335 + self.compensatory[0] + self.index * (100 + 3),
                    76 + self.compensatory[1] + self.line * (100 + 3))
             canvas.blit(item.img, pos)
-            writeText(str(item.number), (pos[0] + 100, pos[1] + 100), is_right_bottom=True)
+            writeText(str(item.number), (pos[0] + 100, pos[1] + 100), canvas, is_right_bottom=True)
             self.index += 1
             if self.index > 5:
                 self.index = 0
@@ -1131,7 +1085,7 @@ class Item_choose():
                 return True
 
     def write_start(self):
-        writeText(self.start, (WIDTH - 226, HEIGHT - 45))
+        writeText(self.start, (WIDTH - 226, HEIGHT - 45), canvas)
         if not ifDoAction(self.last_time, self.intertal):
             return
         self.last_time = time.time()
@@ -1324,7 +1278,7 @@ class GameVar():
     lastTime_of_save = 0
     interval_of_save = 300
     # 主界面背景音乐
-    main_page_bgm = Bgm("songs/main_page/E_nightSong.mp3", 267)
+    main_page_bgm = Bgm()
     # 当前歌曲长度
     this_song_long = 0
     # 消息列表
@@ -1336,7 +1290,7 @@ class GameVar():
     # 大厅
     lirb = "images/lobby/images/"  # lobby_images_road_basic
     lobbyObjects = [LobbyObject(0, 16, 62, 46, "land"), LobbyItem(0, 8, 22, 34, "bianligui"),
-                    LobbyItem(8, 6, 18, 18, "box"), LobbyItem(20, 4, 14, 27, "musicer"),
+                    LobbyItem(8, 6, 18, 18, "box"), LobbyItem(23, 4, 14, 27, "musicer"),
                     LobbyObject(0, 0, 62, 62, "fog"), LobbyObject(32, 22, 30, 38, "cover")]
     # ,LobbyItem(30, 5, 50, 50, "_yellow")]
     # 屏幕的x
@@ -1344,7 +1298,7 @@ class GameVar():
 
     home = Home()
 
-    settingsOldOrNew = "Old"
+    settingsOldOrNew = False  # False为old，True为New
 
     # 设置界面
     setting = Setting((WIDTH, HEIGHT), settingsOldOrNew)
@@ -1372,6 +1326,10 @@ class GameVar():
     enemy_animation = []
 
     judgeResult = JudgeResult("None", canvas)
+
+    dataLines = 0
+
+    enemyLight = PotLight(50, (255, 255, 255), canvas)
 
     # 使用字典存储游戏进程
     STATES = {"HOME_0": 0, "HOME_1": 1, "SONGS_CHOOSE": 2, "SONGS_CHOOSE_2": 3, "START": 4, "ITEM": 5, "RUNNING": 6,
@@ -1491,6 +1449,9 @@ def commentDraw():
     for component in GameVar.DMcomp:
         component.draw()
     for enemy in GameVar.enemies:
+        w = abs(GameVar.enemyLight.size - enemy.width)
+        h = abs(GameVar.enemyLight.size - enemy.height)
+        GameVar.enemyLight.draw((enemy.x - w / 2, enemy.y - h / 2))
         enemy.draw()
 
 
@@ -1557,6 +1518,9 @@ def song_init():
     # thisTime = GameVar.songChoose.info_thisTime
     # GameVar.this_song_long = int(thisTime[0]
     # ) * 60 + int(thisTime[2] + thisTime[3])
+    commentInit()
+    enemySize = Enemy(0).img.get_size()
+    GameVar.enemyLight = PotLight(enemySize[0] + 100, Enemy(0).img.get_at((int(enemySize[0] / 2), int(enemySize[1] / 2))), canvas, lightStrength=60)
     GameVar.states = GameVar.STATES["RUNNING"]
 
 
@@ -1618,7 +1582,7 @@ def end_animate():
         GameVar.end.animate()
         GameVar.end.animateOver()
         if ifDoAction(GameVar.this_time + 1, 2):
-            writeText(str(GameVar.hero.score), (170, 239), (255, 228, 0), 255, Font.score)
+            writeText(str(GameVar.hero.score), (170, 239), canvas, (255, 228, 0), 255, Font.score)
             GameVar.skip = 1
     elif GameVar.skip == 1:
         if GameVar.end.result:
@@ -1626,12 +1590,13 @@ def end_animate():
         GameVar.end.result_x = 0
         GameVar.end.score_x = 0
         GameVar.end.draw()
-        writeText(str(GameVar.hero.score), (170, 239), (255, 228, 0), 255, Font.score)
-        writeText(str(GameVar.end.coin_plus), (145, 302), (255, 228, 0), 255, Font.score)
+        writeText(str(GameVar.hero.score), (170, 239), canvas, (255, 228, 0), 255, Font.score)
+        writeText(str(GameVar.end.coin_plus), (145, 302), canvas, (255, 228, 0), 255, Font.score)
     elif GameVar.skip == 2:
         GameVar.end.draw()
         GameVar.states = GameVar.STATES["SONGS_CHOOSE"]
         pygame.mixer.quit()
+        pygame.mixer.init()
 
 
 # 存储玩家信息
@@ -1688,7 +1653,7 @@ def hall_main():
 
 
 def setting_main():
-    if GameVar.settingsOldOrNew == "New":
+    if GameVar.settingsOldOrNew is True:
         GameVar.setting.mainBeforeDie(canvas)
         canvas.blit(die, (0, 0))
         GameVar.setting.mainAfterDie(canvas, pygame.mouse.get_pos())
@@ -1820,14 +1785,24 @@ def dataHandle(resourse):
     return result
 
 
+def betaMessage():
+    version_message = "VERSION：" + "beta " + VERSION
+    title_en = "This is a beta version and you might meet a warning, bug, even a error. If you meet them, " \
+               "please contact with me on github or QQ. "
+    title_zh = "这是一个测试版本并且你可能会遇到一些不可预知的错误。如果你不幸地遇到了，请在github或者QQ上联系我。"
+    w1, h1 = writeText(title_en, (WIDTH, 0), canvas, (255, 255, 255), font=Font.console, is_right=True,
+                       is_return_size=True)
+    w2, h2 = writeText(title_zh, (WIDTH, 0 + h1), canvas, (255, 255, 255), font=Font.console, is_right=True,
+                       is_return_size=True)
+    writeText(version_message, (WIDTH, 0 + h1 + h2), canvas, (255, 255, 255), font=Font.console, is_right=True)
+
+
 # 程序主函数
 def control():
     global canvas
     # 循环前执行
-
     # 定时保存
-    if ifDoAction(GameVar.lastTime_of_save, GameVar.interval_of_save) and not GameVar.states == GameVar.STATES[
-        "RUNNING"]:
+    if ifDoAction(GameVar.lastTime_of_save, GameVar.interval_of_save) and not GameVar.states == GameVar.STATES["RUNNING"]:
         GameVar.lastTime_of_save = time.time()
         # try:
         #     save()
@@ -1841,7 +1816,7 @@ def control():
         pygame.mixer.init()
         bgm_play()
         GameVar.bg.draw()
-        writeText("按下任意键开始游戏", (WIDTH_2 - 135, HEIGHT - 60))
+        writeText("按下任意键开始游戏", (WIDTH_2 - 135, HEIGHT - 60), canvas)
     elif GameVar.states == GameVar.STATES["HOME_1"]:
         GameVar.bg.draw()
         bgm_play()
@@ -1898,7 +1873,6 @@ def control():
         GameVar.isNewOrOld = True
 
         song_init()
-        commentInit()
         if not GameVar.item_use == "null":
             item_init(GameVar.item_use.name)
             GameVar.item_effect_y = 360 - 50
@@ -1937,7 +1911,7 @@ def control():
         i_plus = 0
         for i in range(len(GameVar.attrs)):
             if i < 2 or not GameVar.attrs[i] == str(attr_orgin[i]):
-                writeText(attr_name[i] + GameVar.attrs[i], (0, 40 * (i + i_plus)), attr_color[i])
+                writeText(attr_name[i] + GameVar.attrs[i], (0, 40 * (i + i_plus)), canvas, attr_color[i])
             else:
                 i_plus -= 1
         if GameVar.ifsongplaying == False and time.time() - GameVar.gameStart >= 1.2:
@@ -1979,8 +1953,10 @@ def control():
     # 循环后执行
     message_main()
     if GameVar.if_message:
-        writeText("fps:" + str(int(GameVar.fpsClock.get_fps())), (0, 620), (25, 25, 255), 255, Font.text)
-        writeText("coin:" + str(GameVar.coin), (0, 650), (25, 25, 255))
+        writeText("fps:" + str(int(GameVar.fpsClock.get_fps())), (0, 620), canvas, (25, 25, 255), 255, Font.text)
+        writeText("coin:" + str(GameVar.coin), (0, 650), canvas, (25, 25, 255))
+        betaMessage()
+    enterEffects()
 
 
 def gameInit():
@@ -2005,14 +1981,28 @@ def gameInit():
     GameVar.songChoose.init()
 
 
+e_alpha = 255
+effe = pygame.Surface(SIZE, SRCALPHA)
+effe.fill((0, 0, 0, 255))
+
+
+def enterEffects():
+    global e_alpha
+    if e_alpha <= 0:
+        return
+    canvas.blit(effe, (0, 0))
+    e_alpha -= 1
+    effe.fill((0, 0, 0, e_alpha))
+
 gameInit()
 while True:
-    pygame.display.set_caption("八方" + VERSION + " fps:" + str(GameVar.fpsClock.get_fps()))
+    pygame.display.set_caption("八方" + VERSION)
 
     last_fps_time = GameVar.fpsClock.tick(GameVar.fps)
 
     control()
 
-    pygame.display.update()
+    pygame.display.flip()
 
     handleEvent()
+

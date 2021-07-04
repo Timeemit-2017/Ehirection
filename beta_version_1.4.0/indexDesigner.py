@@ -1,30 +1,33 @@
-import pygame,sys,easygui,os,tkinter,tkinter.filedialog,time, tkinter.messagebox
+import pygame, sys, easygui, os, tkinter, tkinter.filedialog, time, tkinter.messagebox
 from pygame.locals import *
 from mutagen.mp3 import MP3
-
 
 from indexDesigner_script.BackGround import *
 from indexDesigner_script.Button import *
 from indexDesigner_script.Font import *
 from indexDesigner_script.Arrow import *
+from indexDesigner_script.LoadText import *
+
+tot = TOT()
+tot.init("Chinese")
 
 pygame.init()
 
 WIDTH = 1280
 HEIGHT = 720
 SIZE = (WIDTH, HEIGHT)
-canvas = pygame.display.set_mode((WIDTH, HEIGHT),HWSURFACE|RESIZABLE)
-canvas.fill((0,0,0))
+canvas = pygame.display.set_mode((WIDTH, HEIGHT), HWSURFACE | RESIZABLE)
+canvas.fill((0, 0, 0))
 
 arrow_name = ["up", "right", "down", "left"]
 arrow_img = []
 for name in arrow_name:
     arrow_img.append(pygame.image.load("indexImages/arrow/purple/" + name + ".png"))
 middleLine = pygame.Surface((WIDTH, 1))
-middleLineColor = (255,0,255)
-middleLine.fill((255,0,255))
-TimeLine = pygame.Surface((1,HEIGHT))
-TimeLineColor = (0,0,255)
+middleLineColor = (255, 0, 255)
+middleLine.fill((255, 0, 255))
+TimeLine = pygame.Surface((1, HEIGHT))
+TimeLineColor = (0, 0, 255)
 TimeLine.fill(TimeLineColor)
 window = tkinter.Tk()
 window.withdraw()
@@ -34,11 +37,13 @@ LEFT_HOLD = False
 RIGHT_HOLD = False
 aHOLD = False
 dHOLD = False
+
+
 def handleEvent():
-    global canvas,SIZE,WIDTH,HEIGHT,WIDTH_2,HEIGHT_2,MOUSE_POS,middleLine,middleLineColor,BUTTONLOCK,MUSIC_OFFSET,LEFT_HOLD,RIGHT_HOLD,aHOLD,dHOLD
-    #常量
+    global canvas, SIZE, WIDTH, HEIGHT, WIDTH_2, HEIGHT_2, MOUSE_POS, middleLine, middleLineColor, BUTTONLOCK, MUSIC_OFFSET, LEFT_HOLD, RIGHT_HOLD, aHOLD, dHOLD
+    # 常量
     MOUSE_POS = pygame.mouse.get_pos()
-    BUTTONLOCK = False #按钮锁，每一次点击只可以激活一个按钮
+    BUTTONLOCK = False  # 按钮锁，每一次点击只可以激活一个按钮
     eventList = pygame.event.get()
     # print(eventList)
     for event in eventList:
@@ -55,8 +60,8 @@ def handleEvent():
             HEIGHT_2 = HEIGHT / 2
 
             Locals.backGround = BackGround(
-                color = (0,0,0),
-                size = SIZE
+                color=(0, 0, 0),
+                size=SIZE
             )
 
             for button in Locals.buttons:
@@ -84,7 +89,7 @@ def handleEvent():
 
 
             else:
-                 button.is_hightLight = False
+                button.is_hightLight = False
         if checkState("INDEX"):
             if event.type == USEREVENT:
                 Locals.startIndexFlag = False
@@ -101,22 +106,22 @@ def handleEvent():
                     Locals.startIndexFlag = False
                 for dire in direc:
                     if event.type == KEYDOWN and event.key == dire:
-                        set_arrow(Locals.thisTime/1000,direc[dire])
+                        set_arrow(Locals.thisTime / 1000, direc[dire])
             else:
                 if event.type == KEYDOWN and event.key == K_SPACE:
                     if Locals.if_restart:
                         if Locals.thisTime == Locals.thisSongLong:
-                            #还在末尾就回到开头
+                            # 还在末尾就回到开头
                             Locals.thisTime = 0
                             Locals.if_restart = False
                         else:
-                            #结束后又调了位置位置不变
+                            # 结束后又调了位置位置不变
                             Locals.if_restart = False
                     MUSIC_OFFSET = pygame.mixer.music.get_pos() - Locals.thisTime
                     print(MUSIC_OFFSET)
                     pygame.mixer.music.unpause()
                     pygame.mixer.music.rewind()
-                    pygame.mixer.music.set_pos(Locals.thisTime/1000)
+                    pygame.mixer.music.set_pos(Locals.thisTime / 1000)
                     Locals.startIndexFlag = True
                     break
                 elif event.type == KEYDOWN and event.key == 13:
@@ -157,8 +162,6 @@ def handleEvent():
                 if event.type == KEYDOWN and event.key == K_d:
                     dHOLD = True
 
-
-
                 if event.type == KEYUP and event.key == K_LEFT:
                     LEFT_HOLD = False
                 if event.type == KEYUP and event.key == K_RIGHT:
@@ -186,12 +189,13 @@ def handleEvent():
                 if event.type == KEYDOWN and event.key == K_F3:
                     save()
 
+
 def askformusic():
     print("askmusic")
     var = tkinter.filedialog.askopenfilename(title="选择谱面要使用的音乐",
-                                       initialdir="./songs",
-                                       filetypes=[("*MP3", ".mp3")]
-                                       )
+                                             initialdir="./songs",
+                                             filetypes=[("*MP3", ".mp3")]
+                                             )
     if var == "":
         return
     varSplited = var.split("/")[-1]
@@ -200,17 +204,20 @@ def askformusic():
     print(var)
     return varSplited
 
+
 def askforname():
-    var = easygui.enterbox("请输入项目名称","项目名称")
+    var = easygui.enterbox("请输入项目名称", "项目名称")
     Locals.project_name = var
     print(var)
     return var
+
 
 def askForLittleName():
     var = easygui.enterbox("请输入项目小名称", "项目小名称")
     Locals.project_littleName = var
     print(var)
     return var
+
 
 def askforcover():
     var = tkinter.filedialog.askopenfilename(title="选择谱面要使用的封面",
@@ -225,11 +232,13 @@ def askforcover():
     print(var)
     return varSplited
 
+
 def askForAuthor():
     var = easygui.enterbox("请输入音乐作者名称", "作者名称")
     Locals.project_author = var
     print(var)
     return var
+
 
 def askForDesigner():
     var = easygui.enterbox("请输入谱师名称", "谱师名称")
@@ -237,7 +246,8 @@ def askForDesigner():
     print(var)
     return var
 
-#询问存档地址
+
+# 询问存档地址
 def askForData():
     var = tkinter.filedialog.askopenfilename(title="选择存档",
                                              initialdir="./notes",
@@ -245,14 +255,15 @@ def askForData():
                                              )
     return var
 
+
 def createNewProject():
     Locals.project_name = "Unnamed"
     Locals.project_music_road = "Undefined"
     Locals.state = Locals.STATES["CREATE"]
 
-class Locals():
 
-    STATES = {"LOAD":0, "HOME":1, "CREATE":2, "OPEN":3, "QUIT":4, "INDEX":5, "INFO":6}
+class Locals():
+    STATES = {"LOAD": 0, "HOME": 1, "CREATE": 2, "OPEN": 3, "QUIT": 4, "INDEX": 5, "INFO": 6}
     state = STATES["HOME"]
 
     project_name = "name"
@@ -283,28 +294,28 @@ class Locals():
 
     if_restart = False
 
-    backGround = BackGround(color = (0,0,0),
-                            size = (1280, 720)
+    backGround = BackGround(color=(0, 0, 0),
+                            size=(1280, 720)
                             )
 
     buttons = [Button((440, 260), (400, 100), "OPEN",
-                      this_state= STATES["HOME"],
+                      this_state=STATES["HOME"],
                       text="Open a project",
                       font=Font.normal_text,
-                      to = "Locals.state"
+                      to="Locals.state"
                       ),
                Button((440, 360), (400, 100), "QUIT",
-                      this_state= STATES["HOME"],
+                      this_state=STATES["HOME"],
                       text="Back To Game",
                       font=Font.normal_text,
-                      to = "Locals.state"
+                      to="Locals.state"
                       ),
                FunctionButton((440, 160), (400, 100), askforname,
                               this_state=STATES["CREATE"],
                               text="UnNamed",
                               title="Name",
                               font=Font.normal_text,
-                              to = "Locals.project_name"
+                              to="Locals.project_name"
                               ),
                Button((440, 260), (400, 100), "INFO",
                       this_state=STATES["CREATE"],
@@ -357,7 +368,7 @@ class Locals():
                       this_state=STATES["CREATE"],
                       text="Start",
                       font=Font.normal_text,
-                      to = "Locals.state"
+                      to="Locals.state"
                       ),
                Button((440, 460), (400, 100), "HOME",
                       this_state=STATES["CREATE"],
@@ -377,12 +388,15 @@ class Locals():
 def checkState(state):
     return Locals.state == Locals.STATES[state]
 
+
 def changeState(state):
     Locals.state = Locals.STATES[state]
+
 
 def button_main():
     for button in Locals.buttons:
         button.draw(canvas, Locals.state)
+
 
 def set_arrow(time, dire, arrow=None):
     print(dire)
@@ -391,9 +405,11 @@ def set_arrow(time, dire, arrow=None):
     else:
         Locals.arrows.append(Arrow(Locals.mode, arrow_img[dire], time, dire))
 
+
 def draw_arrow():
     for arrow in Locals.arrows:
-        arrow.draw(100, canvas, Locals.thisTime/1000, Locals.editFloor == 1 or Locals.editFloor == 2, Locals.highLightArrows)
+        arrow.draw(100, canvas, Locals.thisTime / 1000, Locals.editFloor == 1 or Locals.editFloor == 2,
+                   Locals.highLightArrows)
 
         if Locals.startIndexFlag:
             arrow.if_highLight = False
@@ -405,10 +421,8 @@ def draw_arrow():
                 arrow.if_highLight = True
 
 
-
-
 def move_arrow():
-    global aHOLD,dHOLD
+    global aHOLD, dHOLD
     if not Locals.editFloor == 2:
         return
     if aHOLD:
@@ -416,11 +430,14 @@ def move_arrow():
     elif dHOLD:
         Locals.highLightArrows[Locals.editChoose].time += Locals.moveSpeed / 1000
 
+
 def arrow_list_empty():
     Locals.arrows = []
 
+
 def leftMove():
     Locals.thisTime -= Locals.moveSpeed
+
 
 def rightMove():
     Locals.thisTime += Locals.moveSpeed
@@ -443,6 +460,7 @@ def highLightArrow():
                 pass
     arrowInOrder(Locals.highLightArrows)
 
+
 def drawBlank():
     for i in range(0, len(Locals.highLightArrows)):
         arrow = Locals.highLightArrows[i]
@@ -454,21 +472,25 @@ def drawBlank():
         drawBlank1((255, 0, 0))
         drawBlank2()
 
+
 def drawBlank1(color=(255, 255, 255)):
     if not len(Locals.highLightArrows) == 0:
         rect = Locals.highLightArrows[Locals.editChoose].img.get_rect()
         rect.move_ip(WIDTH - 50, 20 + Locals.editChoose * 50)
         pygame.draw.rect(canvas, color, rect, width=1)
 
+
 editBackGround = pygame.Surface((200, 50))
-editBackGround.fill((25,25,112))
+editBackGround.fill((25, 25, 112))
+
+
 def drawBlank2():
     # canvas.blit(editBackGround, ((WIDTH - 200 - editBackGround.get_width(),20 + Locals.editChoose * 50)))
     pass
 
 
 def arrowInOrder(list, forSave=False):
-    #冒泡排序
+    # 冒泡排序
     if Locals.editFloor > 1 and not forSave:
         return
     length = len(list)
@@ -491,8 +513,8 @@ def save(exit=False):
     else:
         textPath = tkinter.filedialog.asksaveasfilename(title="选择保存谱面文件的位置",
                                                         filetypes=[("*TXT", ".txt")],
-                                                        initialdir = "./notes",
-                                                        initialfile = "Untitled.txt"
+                                                        initialdir="./notes",
+                                                        initialfile="Untitled.txt"
                                                         )
     if textPath == "":
         textPath = "./notes/autoSaves/AutoSave{0}.txt".format(time.strftime("%Y-%m-%d-%H.%M.%S", time.localtime()))
@@ -504,19 +526,21 @@ def save(exit=False):
                 pathSplited = Locals.project_music_road.split("/")
                 coverPathSplited = Locals.project_cover_road.split("/")
                 songPath = "{0}/{1}/{2}".format(pathSplited[-3], pathSplited[-2], pathSplited[-1])
-                coverPath = "{0}/{1}/{2}/{3}".format(coverPathSplited[-4], coverPathSplited[-3], coverPathSplited[-2], coverPathSplited[-1])
+                coverPath = "{0}/{1}/{2}/{3}".format(coverPathSplited[-4], coverPathSplited[-3], coverPathSplited[-2],
+                                                     coverPathSplited[-1])
                 author = Locals.project_author
                 noteDesigner = Locals.project_noteDesigner
-                line = "name : {0}\nlittleName : {1}\npath : {2}\ncover : {3}\nauthor : {4}\nnoteDesigner : {5}\n".format(Locals.project_name, Locals.project_littleName, songPath, coverPath, author, noteDesigner)
+                line = "name : {0}\nlittleName : {1}\ndirePath : {2}\ncover : {3}\nauthor : {4}\nnoteDesigner : {5}\n".format(
+                    Locals.project_name, Locals.project_littleName, songPath, coverPath, author, noteDesigner)
             else:
                 arrow = Locals.arrows[i]
                 line = "    ({0}, {1})\n".format(arrow.dire, round(arrow.time, 3))
             strGoingSave += line
         file.write(strGoingSave)
 
-
     # print("this   is   a\ntext")
     # print("this   is   a\ntext".replace(" ", "").replace("\n", ""))
+
 
 def load(path):
     arrow_list_empty()
@@ -530,7 +554,7 @@ def load(path):
             elif i == 1:
                 Locals.project_littleName = infoHandle(line)
             elif i == 2:
-                Locals.project_music_road  = infoHandle(line)
+                Locals.project_music_road = infoHandle(line)
             elif i == 3:
                 Locals.project_cover_road = infoHandle(line)
             elif i == 4:
@@ -541,6 +565,7 @@ def load(path):
                 data = eval(dataHandle(line))
                 set_arrow(data[1], data[0])
             i += 1
+
 
 def infoHandle(resourse):
     result = resourse.split(":")[-1]
@@ -554,6 +579,7 @@ def dataHandle(resourse):
     result = result.lstrip()
     return result
 
+
 def beforeIndex():
     pygame.mixer.music.load(Locals.project_music_road)
     document = MP3(Locals.project_music_road)
@@ -562,6 +588,7 @@ def beforeIndex():
     pygame.mixer.music.play(start=50.0)
     pygame.mixer.music.set_volume(0.2)
     pygame.mixer.music.pause()
+
 
 def control():
     if checkState("HOME"):
@@ -622,5 +649,3 @@ while True:
     handleEvent()
 
     pygame.display.update()
-
-
