@@ -303,6 +303,7 @@ class ChooseSet(Set):
         self.set_attribute(SettingVar.chooses)
         self.button = ChooseSetButton(buttontype, screen_size)
 
+
 class ChooseSetButton(SetButton):
     def __init__(self, buttontype, screen_size):
         SetButton.__init__(self, buttontype, screen_size)

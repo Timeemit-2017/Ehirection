@@ -7,7 +7,6 @@ import pygame
 import random, time, sys, os, math
 import tkinter.messagebox
 from pygame.locals import *
-
 # try:
 #     from script.summon_treasure import *
 #     from script.items import *
@@ -25,7 +24,6 @@ from pygame.locals import *
 
 from script.summon_treasure import *
 from script.items import *
-# from script.lobby import *
 from script.Hall import *
 from script.Error import *
 from script.Setting import *
@@ -35,9 +33,12 @@ from script.Box import *
 from script.Bgm import *
 from script.basic import *
 from script.PotLight import PotLight
+from script.Message import *
+from script.SongChoose import *
 
 # 初始化
 pygame.init()
+
 
 def SIZEUpdate(size):
     global SIZE, HEIGHT, WIDTH, HEIGHT_2, WIDTH_2
@@ -181,10 +182,10 @@ def handleEvent():
                 pygame.quit()
                 sys.exit()
             elif event.type == KEYUP and event.key == KEYS["switch_message"]:
-                if GameVar.if_message:
-                    GameVar.if_message = False
+                if GameVar.messageControl.if_message:
+                    GameVar.messageControl.if_message = False
                 else:
-                    GameVar.if_message = True
+                    GameVar.messageControl.if_message = True
             elif event.type == KEYUP and event.key == KEYS["start_indexDesigner"]:
                 window = tk.Tk()
                 window.withdraw()
@@ -322,10 +323,10 @@ def handleEvent():
 
             if GameVar.settingsOldOrNew == "New":
                 if event.type == MOUSEWHEEL:
-                    # message_summon("System", str(event))
+                    # GameVar.messageControl.message_summon("System", str(event))
                     result = GameVar.setting.step(event.y, HEIGHT)
                     if result:
-                        message_summon("System", result)
+                        GameVar.messageControl.message_summon("System", result)
                 elif event.type == MOUSEBUTTONDOWN and event.button == 1:
                     for i in range(len(GameVar.setting.settings)):
                         set = GameVar.setting.settings[i]
@@ -335,9 +336,9 @@ def handleEvent():
                             else:
                                 set.select = True
                                 setIndex = i
-                                message_summon("System", str(i))
+                                GameVar.messageControl.message_summon("System", str(i))
                 elif event.type == KEYUP and GameVar.setting.settings[setIndex].select:
-                    message_summon("System", "setKey")
+                    GameVar.messageControl.message_summon("System", "setKey")
                     GameVar.setting.settings[setIndex].input(event.key)
             else:
                 if not THIS_SET.select:
@@ -361,12 +362,12 @@ def handleEvent():
                 sc.dire = False
                 sc.start = True
                 sc.info_pass = False
-                sc.step()
+                sc.step(SIZE, last_fps_time)
             elif event.type == KEYDOWN and event.key == KEYS["songc_down"]:
                 sc.dire = True
                 sc.start = True
                 sc.info_pass = False
-                sc.step()
+                sc.step(SIZE, last_fps_time)
             elif event.type == KEYUP and (event.key == KEYS["songc_up"] or event.key == KEYS["songc_down"]):
                 sc.checkMiddle()
                 sc.start = False
@@ -483,41 +484,6 @@ class GameObject(EHRTObject):
                self.y - c.height < c.y < self.y + self.height
 
 
-# 创建提示类
-class Message(EHRTObject):
-    def __init__(self, x, y, width, height, _from_, message):
-        EHRTObject.__init__(self, x, y, width, height)
-        self._from_ = _from_
-        self.from_display = "<" + self._from_ + ">"
-        self.message = message
-        self.alpha = 255
-        self.can_delete = False
-        self.summon_time = time.time()
-        self.speed = len(GameVar.messages) + 1
-
-    def set_y(self):
-        index = GameVar.messages.index(self)
-
-    def draw(self):
-        writeText(self.from_display + self.message, (self.x, self.y), canvas, (255, 255, 255), self.alpha, Font.console)
-
-    def check_time(self):
-        if not ifDoAction(self.summon_time, 1):
-            return
-        self.can_delete = True
-
-    def delete(self):
-        # 消失特效
-        # if self.can_delete:
-        #     # self.y -= len(GameVar.messages)
-        #     self.y -= 2
-        #     if self.y <= -15:
-        #         GameVar.messages.remove(self)
-        self.alpha -= 2
-        if self.alpha <= 20:
-            GameVar.messages.remove(self)
-
-
 # 创建Hero类
 class Hero(GameObject):
     def __init__(self, life, defence):
@@ -615,238 +581,9 @@ class End():
             self.score_x = 0
 
 
-class Record():
-    def __init__(self, cph, cover):
-        self.cph = cph
-        if not cover is None:
-            self.cover = pygame.transform.scale(cover, (250, 250))
-        else:
-            self.cover = None
-        self.pos = (0, 0)
-
-    def set_pos(self, target=None, plus=None):
-        if plus is None:
-            self.pos = target
-        else:
-            self.pos = (self.pos[0] + plus[0], self.pos[1] + plus[1])
-
-    def changeCover(self, target):
-        self.cover = pygame.transform.scale(target, (250, 250))
-
-    def draw(self, canvas):
-        canvas.blit(self.cover, (self.pos[0] + 55, self.pos[1] + 55))
-        canvas.blit(self.cph, self.pos)
 
 
-def turnInt(target):
-    if target:
-        return 1
-    else:
-        return -1
 
-# 由于是record_dis变得自定义，算法需要调整！
-class SongChoose:
-    def __init__(self, cph):
-        self.cph = cph  # 唱片环图片
-        self.cphSize = self.cph.get_size()
-        self.cphWidth = self.cphSize[0]
-        self.cphWidth_2 = self.cphSize[0] / 2
-        self.cphHeight = self.cphSize[1]
-        self.cphHeight_2 = self.cphSize[1] / 2
-        self.imgs = []
-        self.imgs_road = []
-        # 三个唱片
-        self.record_dis = HEIGHT_2 # 两个唱片之间的距离
-        if self.record_dis < self.cphHeight:
-            self.record_dis = self.cphHeight
-        self.recordMain_orgin = (0, 0)  # record_main的初始位置
-        self.record_m = Record(self.cph, None)  # 中间的唱片
-        self.record_u = Record(self.cph, None)  # 上方的唱片
-        self.record_d = Record(self.cph, None)  # 下方的唱片
-        self.record_uu = Record(self.cph, None)  # 上方的上方的唱片
-        self.record_dd = Record(self.cph, None)  # 下方的下方的唱片
-        self.records = {"uu": self.record_uu, "up": self.record_u, "main": self.record_m,
-                        "down": self.record_d, "dd": self.record_dd}  # 唱片字典
-        self.number = 0  # 封面索引
-        self.speed = 0  # 移动速度
-        self.dire = False  # 此时的运动方向 False表向下移动，往上切换谱面
-        self.life = 0
-        self.start = False
-        # 描述
-        self.info_name = []
-        self.info_time = []
-        self.info_little_name = []
-        self.info_thisLittleName = ""
-        self.info_thisName = ""
-        self.info_thisTime = ""
-        self.info_pass = False
-        self.info_x = 300
-        self.info_y = 95
-
-    def recordInit(self, localNumber=0):
-        records_set = [self.record_uu, self.record_u, self.record_m, self.record_d, self.record_dd]
-        for i in range(0, len(records_set)):
-            rec = records_set[i]
-            this_pos = (WIDTH_2 - self.cphWidth_2, HEIGHT_2 - self.cphHeight_2 - (2- i) * self.record_dis)
-            rec.set_pos(this_pos)
-            index = localNumber - 2 + i
-            if index > len(self.imgs) - 1:
-                index = index - len(self.imgs)
-            rec.changeCover(self.imgs[index])
-            if i == 2:
-                self.recordMain_orgin = this_pos
-
-    def recordDraw(self):
-        for record in self.records:
-            self.records[record].draw(canvas)
-
-    def changeNumber(self, dire):
-        dire = turnInt(dire)
-        self.number += dire
-
-    def checkNumber(self):
-        if self.number < 0:
-            self.number = len(self.imgs) - 1
-        elif self.number > len(self.imgs) - 1:
-            self.number = 0
-
-    def set(self, ifCleanSpeed=True):
-        if ifCleanSpeed:
-            self.speed = 0
-        self.recordInit(self.number)
-
-    def forceControl(self, acceleration=50, maxSpeed=70):
-        global last_fps_time
-        self.speed = self.speed + acceleration * last_fps_time / 1000
-        if self.speed > maxSpeed:
-            self.speed = maxSpeed
-        return self.speed
-
-    def recordUpdate(self):
-        # 使除了uuRecord，其余的record跟随uu的方法
-        records_set = [self.record_u, self.record_m, self.record_d, self.record_dd]
-        for i in range(len(records_set)):
-            rec = records_set[i]
-            rec.set_pos((self.record_uu.pos[0], self.record_uu.pos[1] + (i + 1) * self.record_dis))
-
-    def recordStep(self, dire):
-        dire = -turnInt(dire)
-        self.records["uu"].set_pos(plus=(0, dire * self.forceControl()))
-        self.recordUpdate()
-
-    def recordCheck(self):
-        if self.records["main"].pos[1] < HEIGHT_2 - self.cphHeight_2 - self.record_dis or self.records["main"].pos[1] > HEIGHT_2 - self.cphHeight_2 + self.record_dis:
-            message_summon("System", str(self.record_m.pos) + " 判定时")
-            list_temp = []
-            for rec in self.records:
-                list_temp.append(self.records[rec])
-            print(list_temp)
-            if self.dire:
-                temp = list_temp[0]
-                list_temp[0] = list_temp[-1]
-                list_temp.insert(1, temp)
-                list_temp.pop(-1)
-            else:
-                temp = list_temp[-1]
-                list_temp[-1] = list_temp[0]
-                list_temp.insert(-1, temp)
-                list_temp.pop(0)
-            resource = ["uu", "up", "main", "down", "dd"]
-            for i in range(0, len(resource)):
-                self.records[resource[i]] = list_temp[i]
-            self.record_uu = self.records["uu"]
-            self.record_u = self.records["up"]
-            self.record_m = self.records["main"]
-            self.record_d = self.records["down"]
-            self.record_dd = self.records["dd"]
-            self.changeNumber(self.dire)
-            self.checkNumber()
-            self.info_update()
-            self.set(False)
-
-    def checkMiddle(self):
-        # 检测record_main是否已经超过中间，是的话直接切换下一个
-        if self.dire:
-            if self.record_m.pos[1] < self.recordMain_orgin[1] - self.cphHeight / 2:
-                self.changeNumber(self.dire)
-                self.checkNumber()
-                self.info_update()
-        else:
-            if self.record_m.pos[1] > self.recordMain_orgin[1] + self.cphHeight / 2:
-                self.changeNumber(self.dire)
-                self.checkNumber()
-                self.info_update()
-
-    def checkLife(self):
-        # 检测生命值是不是低于等于0
-        if self.life <= 0:
-            self.start = False
-            self.life = 0
-
-    def infoInit(self):
-        i = 0
-        # 旧谱面导入
-        with open("data/song_name.txt", encoding="utf-8") as file:
-            for line in file:
-                if i == 0:
-                    self.info_name = eval(line.rstrip())
-                elif i == 1:
-                    self.info_little_name = eval(line.rstrip())
-                elif i == 2:
-                    self.info_time = eval(line.rstrip())
-                i += 1
-        self.info_thisName = self.info_name[0]
-        self.info_thisLittleName = self.info_little_name[0]
-        self.info_thisTime = self.info_time[0]
-
-    def info(self):
-        self.draw_info()
-
-    def info_update(self):
-        self.info_thisName = self.info_name[self.number]
-        self.info_thisLittleName = self.info_little_name[self.number]
-        self.info_thisTime = self.info_time[self.number]
-
-    def draw_info(self):
-        writeText(self.info_thisName, (self.info_x - 5, self.info_y), canvas, (255, 255, 255), 255, Font.song_name)
-        writeText(self.info_thisLittleName, (self.info_x, self.info_y + 100), canvas, (255, 255, 255), 255, Font.text)
-        writeText("时长：" + self.info_thisTime, (self.info_x, self.info_y + 150), canvas, (255, 255, 255), 255,
-                  Font.little_text)
-
-    def set_imgs(self):
-        # with open("data/songs.txt", encoding="gbk") as file:
-        #     for line in file:
-        #         self.imgs_road = eval(line.rstrip())
-        #         break
-        basic_road = "images/start/songs/"
-        for img_road in self.imgs_road:
-            self.imgs.append(pygame.image.load(basic_road + img_road).convert())
-
-    def draw(self):
-        self.recordDraw()
-        if GameVar.if_message:
-            pygame.draw.rect(canvas, (255, 255, 255), (self.record_m.pos[0], self.record_m.pos[1], 360, 360), width=1)
-            pygame.draw.rect(canvas, (255, 0, 255), (self.record_uu.pos[0], self.record_uu.pos[1], 360, 360), width=1)
-            pygame.draw.rect(canvas, (255, 0, 0), (self.record_u.pos[0], self.record_u.pos[1], 360, 360), width=1)
-            writeText("Record_Main: " + str(self.record_m.pos), (0, 300), canvas)
-            writeText("SongChoose.start: " + str(GameVar.songChoose.start), (0, 50), canvas)
-
-    def step(self):
-        self.recordStep(self.dire)
-        self.recordCheck()
-
-    def init(self):
-        self.set()
-        self.info_update()
-
-    def main(self):
-        # 主函数
-        if self.start:
-            self.step()
-        else:
-            self.set()
-        self.draw()
-        self.info()
 
 
 # 创建Enemy类
@@ -939,7 +676,7 @@ class Enemy(GameObject):
             result = "EMPTY"
         else:
             result = "Unknown"
-        message_summon("System.Enemy.judge", "{0} distance:".format(result) + str(dis))
+        GameVar.messageControl.message_summon("System.Enemy.judge", "{0} distance:".format(result) + str(dis))
         GameVar.judgeResult.append(result)
         GameVar.judgeResult.append("Combo")
         GameVar.judgeResult.changeDisplay(result)
@@ -1159,9 +896,9 @@ class Home(AnimateObject):
     def print(self):
         for item in self.list:
             # print(item.name)
-            # message_summon("System","您抽到了 [" + item.quality + "]" + item.name)
+            # GameVar.messageControl.message_summon("System","您抽到了 [" + item.quality + "]" + item.name)
             pass
-        # message_summon("System", str(self.list))
+        # GameVar.messageControl.message_summon("System", str(self.list))
         # print(self.list)
         return self.list
 
@@ -1199,7 +936,7 @@ class Account_Item():
         GameVar.backpack.remove(self)
 
 
-class GameVar():
+class GameVar:
     hero = Hero(50.0, 0.0)
     # 英雄初始数值
     hero_defeat = hero.defeat
@@ -1244,7 +981,7 @@ class GameVar():
     # 是否要暂停
     pause = False
     # 歌曲选单类
-    songChoose = SongChoose(cph)
+    songChoose = SongChoose(cph, SIZE, canvas)
     # 结束类
     end = End()
     # 结束时的time.time()
@@ -1281,10 +1018,6 @@ class GameVar():
     main_page_bgm = Bgm()
     # 当前歌曲长度
     this_song_long = 0
-    # 消息列表
-    messages = []
-    # 是否显示控制台
-    if_message = True
     # 当前游戏的模式
     gamemode = "yellow"
     # 大厅
@@ -1330,6 +1063,8 @@ class GameVar():
     dataLines = 0
 
     enemyLight = PotLight(50, (255, 255, 255), canvas)
+
+    messageControl = MessageControl(canvas)
 
     # 使用字典存储游戏进程
     STATES = {"HOME_0": 0, "HOME_1": 1, "SONGS_CHOOSE": 2, "SONGS_CHOOSE_2": 3, "START": 4, "ITEM": 5, "RUNNING": 6,
@@ -1661,9 +1396,6 @@ def setting_main():
         GameVar.setting.main_old(canvas)
 
 
-def message_summon(come, message):
-    GameVar.messages.append(Message(0, 0, None, None, come, message))
-
 
 def message_state_change():
     if not GameVar.last_state == GameVar.states:
@@ -1671,39 +1403,9 @@ def message_state_change():
             pygame.key.set_repeat(1, 10)
         else:
             pygame.key.set_repeat()
-        message_summon("System", "StateChange( " + GameVar.States[GameVar.last_state] + " to " + GameVar.States[
+        GameVar.messageControl.message_summon("System", "StateChange( " + GameVar.States[GameVar.last_state] + " to " + GameVar.States[
             GameVar.states] + " )")
         GameVar.last_state = GameVar.states
-
-
-def message_check_y():
-    i = 0
-    for message in GameVar.messages:
-        message.y = i * 15
-        i += 1
-
-
-def message_draw():
-    for message in GameVar.messages:
-        message.draw()
-
-
-def message_delete():
-    for message in GameVar.messages:
-        message.check_time()
-        message.delete()
-
-
-def message_main():
-    message_delete()
-    if not GameVar.if_message:
-        GameVar.messages = []
-        return
-    message_state_change()
-    if GameVar.messages == []:
-        return
-    message_check_y()
-    message_draw()
 
 
 # 切换state
@@ -1757,7 +1459,6 @@ def loadNote(path="./notes"):
                     GameVar.songChoose.info_time.append(finalLength)
                 elif i == 3:
                     print(infoHandle(line))
-                    print()
                     image = pygame.image.load(infoHandle(line)).convert()
                     pic = pygame.transform.scale(image, (250, 250))
                     GameVar.songChoose.imgs.append(pic)
@@ -1811,7 +1512,7 @@ def control():
         #     pygame.quit()
         #     sys.exit()
         save()
-        message_summon("System", "已保存")
+        GameVar.messageControl.message_summon("System", "已保存")
     if GameVar.states == GameVar.STATES["HOME_0"]:
         pygame.mixer.init()
         bgm_play()
@@ -1835,15 +1536,15 @@ def control():
         canvas.blit(die, (0, 0))
         bgm_play()
         GameVar.itemChoose.init()
-        GameVar.songChoose.main()
+        GameVar.songChoose.main(SIZE, last_fps_time, GameVar.messageControl.if_message)
     elif GameVar.states == GameVar.STATES["SONGS_CHOOSE_2"]:
         GameVar.bg.draw()
         hall_main()
         canvas.blit(die, (0, 0))
         bgm_play()
-        GameVar.songChoose.set()
+        GameVar.songChoose.set(SIZE)
         GameVar.songChoose.start = False
-        GameVar.songChoose.draw()
+        GameVar.songChoose.draw(GameVar.messageControl.if_message)
         GameVar.songChoose.info()
         GameVar.itemChoose.main()
     elif GameVar.states == GameVar.STATES["BOX"]:
@@ -1951,8 +1652,9 @@ def control():
         GameVar.main_page_bgm.set()
         end_animate()
     # 循环后执行
-    message_main()
-    if GameVar.if_message:
+    GameVar.messageControl.message_main()
+    message_state_change()
+    if GameVar.messageControl.if_message:
         writeText("fps:" + str(int(GameVar.fpsClock.get_fps())), (0, 620), canvas, (25, 25, 255), 255, Font.text)
         writeText("coin:" + str(GameVar.coin), (0, 650), canvas, (25, 25, 255))
         betaMessage()
@@ -1968,7 +1670,7 @@ def gameInit():
         showError("加载player.txt时出现错误,有可能文件被锁定或删除")
         pygame.quit()
         sys.exit()
-    message_summon("System", "GameStart")
+    GameVar.messageControl.message_summon("System", "GameStart")
 
     GameVar.setting.load_settings(GameVar.settingsOldOrNew)
     # try:
@@ -1978,7 +1680,7 @@ def gameInit():
     #     pygame.quit()
     #     sys.exit()
     loadNote()
-    GameVar.songChoose.init()
+    GameVar.songChoose.init(SIZE)
 
 
 e_alpha = 255
