@@ -34,6 +34,7 @@ from script.basic import *
 from script.PotLight import PotLight
 from script.Message import *
 from script.SongChoose import *
+from script.Bgm import *
 
 # 初始化
 pygame.init()
@@ -444,39 +445,6 @@ def handleEvent():
                 GameVar.skip += 1
                 if GameVar.skip > 3:
                     GameVar.skip = 3
-
-
-
-
-
-class Bgm:
-    def __init__(self, road, time):
-        self.road = road
-        self.time = time
-        self.lastTime = 0
-        self.interval = self.time
-
-    def set(self):
-        self.lastTime = 0
-
-    def play(self):
-        if not ifDoAction(self.lastTime, self.interval + 1):
-            return
-        self.lastTime = time.time()
-        self.bgm_init(self.road)
-        pygame.mixer.music.play()
-
-    def play(self):
-        if not ifDoAction(self.lastTime, self.interval + 1):
-            return
-        self.lastTime = time.time()
-        self.bgm_init(self.road)
-        pygame.mixer.music.play()
-
-    def bgm_init(self, road):
-        pygame.mixer.init()
-        pygame.mixer.music.load(road)
-        pygame.mixer.music.set_volume(0.2)
 
 
 class EHRTObject():
@@ -1047,7 +1015,7 @@ class GameVar:
     lastTime_of_save = 0
     interval_of_save = 300
     # 主界面背景音乐
-    main_page_bgm = Bgm("songs/main_page/E_nightSong.mp3", 267)
+    main_page_bgm = Bgm("songs/main_page/")
     # 当前歌曲长度
     this_song_long = 0
     # 当前游戏的模式
@@ -1718,6 +1686,7 @@ def gameInit():
     #     sys.exit()
     loadNote()
     GameVar.songChoose.init(SIZE)
+    GameVar.main_page_bgm.init()
 
 
 gameInit()
