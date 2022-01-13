@@ -4,9 +4,10 @@ import time
 class Animation(object):
     def __init__(self, index, arguments):
         self.state = 0
-        self.indexs = index #[[1,2]]
-        self.arguments = arguments #[[(True, True), (True, True)]]
+        self.indexs = index  # [[1,2]]
+        self.arguments = arguments  # [[(True, True), (True, True)]]
         self.sprites = []
+
     def main(self, canvas):
         if self.state == 0:
             index = self.indexs[self.state]
@@ -18,31 +19,35 @@ class Animation(object):
         for arg in arguments:
             self.sprites.append(Sprite(arg[0], arg[1], arg[2], arg[3]))
 
+
 class MoveObject(object):
-    def __init__(self,img,pos,speed):
+    def __init__(self, img, pos, speed):
         self.img = img
         self.pos = pos
         self.orginal_pos = pos
-        self.speed = speed# pixel/sec.
+        self.speed = speed  # pixel/sec
+
     def reset(self):
         self.pos = self.orginal_pos
+
 
 class Sprite(object):
     def __init__(self,source,position,pos,size,interval):
         self.source = source
         self.position = position
         self.position_origin = self.position
-        self.pos = pos #List
-        self.size = size #turple
+        self.pos = pos  # List
+        self.size = size  # turple
         self.index = 0
         self.interval = interval
         self.lastTime = time.time()
         self.minus_size = (self.position[0] / 1280, self.position[1] / 720)
+
     def draw(self, target):
         draw_range = (self.pos[self.index][0], self.pos[self.index][1], self.size[0], self.size[1])
         target.blit(self.source, self.position, draw_range)
 
-    def animation(self,target, start, end, if_set=True):
+    def animation(self, target, start, end, if_set=True):
         self.draw(target)
         if not self.ifDoAction(self.interval, self.lastTime):
             return
