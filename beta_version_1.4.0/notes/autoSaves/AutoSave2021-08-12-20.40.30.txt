@@ -1,0 +1,17 @@
+name : Unnamed
+littleName : littleName
+path : songs/foundation_pack/his_theme.mp3
+cover : images/start/songs/his_theme.jpg
+author : None
+noteDesigner : None
+    (0, 0.487)
+    (0, 0.854)
+    (0, 1.19)
+    (0, 1.688)
+    (0, 2.146)
+    (2, 2.92)
+    (0, 3.327)
+    (2, 3.59)
+    (2, 3.974)
+    (0, 4.49)
+    (0, 4.82)

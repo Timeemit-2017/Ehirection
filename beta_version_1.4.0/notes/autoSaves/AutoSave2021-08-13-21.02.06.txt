@@ -1,0 +1,10 @@
+name : UnNamed
+littleName : UnNamed
+path : songs/foundation_pack/KING.mp3
+cover : images/start/songs/his_theme.jpg
+author : None
+noteDesigner : None
+    (0, 0.62)
+    (0, 1.106)
+    (0, 1.303)
+    (0, 1.468)

@@ -1,0 +1,9 @@
++type: "item"
+id: 2
+-cost: 128
++type: "item"
+id: 3
+-cost: 128
++type: "record"
+id: 0
+-cost: 155

@@ -1,0 +1,15 @@
+name: yellow
+color: rgb(255, 252, 0)
+judge{
+    position: default
+    free: hollow
+    press: solid
+    (0, +50),
+    (+50, 0),
+    (0, -50),
+    (-50, 0)
+}
+spawn{
+    position: same_line
+    movement: same_line
+}
