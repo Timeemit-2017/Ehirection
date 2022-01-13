@@ -30,19 +30,14 @@ from script.Setting import *
 from script.Animation import *
 from script.Pool import *
 from script.Box import *
-<<<<<<< HEAD
-from script.Bgm import *
 from script.basic import *
 from script.PotLight import PotLight
 from script.Message import *
 from script.SongChoose import *
-=======
->>>>>>> parent of beb82a0 (develop 1.4.0.4 update)
+from script.Bgm import *
 
 # 初始化
 pygame.init()
-
-<<<<<<< HEAD
 
 def SIZEUpdate(size):
     global SIZE, HEIGHT, WIDTH, HEIGHT_2, WIDTH_2
@@ -53,31 +48,28 @@ def SIZEUpdate(size):
     HEIGHT_2 = HEIGHT / 2
 
 def canvasUpdate():
-    global SIZE, SCREENTAG, BGblack
+    global SIZE, SCREENTAG, BGblack, canvas
     canvas = pygame.display.set_mode((WIDTH, HEIGHT), SCREENTAG)
     BGblack = canvas.get_rect()
 
-=======
->>>>>>> parent of beb82a0 (develop 1.4.0.4 update)
 infoObject = pygame.display.Info()
 
 WIDTH = infoObject.current_w
 HEIGHT = infoObject.current_h
 SIZE = (WIDTH, HEIGHT)
-# WIDTH = 1280
-# HEIGHT = 720
-WIDTH_2 = WIDTH / 2
-HEIGHT_2 = HEIGHT / 2
+SIZE = (1280, 720)
+SIZEUpdate(SIZE)
 VERSION = "1.4.0.3"
 
 pygame.display.set_icon(pygame.image.load("eightDirection.ico"))
-# os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (0,0)
+os.environ["SDL_VIDEO_WINDOW_POS"] = "%d,%d" % (20, 20)
 SCREENTAG = RESIZABLE
-canvas = pygame.display.set_mode((WIDTH, HEIGHT), SCREENTAG)
-canvas.fill((255, 255, 255, 255))
+canvasUpdate()
+writeText("Loading...", (WIDTH, HEIGHT), canvas, is_right_bottom=True)
+pygame.display.flip()
 BGblack = canvas.get_rect()
 # 设置标题
-pygame.display.set_caption("八方")
+pygame.display.set_caption("八方 {0} {1}".format(VERSION, SIZE))
 # 加载英雄图片
 main_cover = pygame.image.load("images/mainC/main_cover.png")
 yellow_ring = pygame.image.load("images/DMcs/yellowCM.png")
@@ -197,9 +189,21 @@ def handleEvent():
 
             GameVar.setting.change_scale((WIDTH, HEIGHT))
 
+            die = pygame.Surface((WIDTH, HEIGHT), SRCALPHA | HWSURFACE).convert()
+            die.set_alpha(128)
+
+            if not len(GameVar.DMcomp) == 0:
+                for component in GameVar.DMcomp:
+                    component.set()
+
+            if not len(GameVar.DMcomp) == 0:
+                for component in GameVar.DMcomp:
+                    component.set()
+
+            GameVar.setting.change_scale((WIDTH, HEIGHT))
+
             GameVar.box_animation.change_scale((WIDTH, HEIGHT))
             GameVar.box_result.box_sprite.set_pos((WIDTH, HEIGHT))
-
             for button in GameVar.box_animation.buttons:
                 button.set_pos((WIDTH, HEIGHT))
 
@@ -435,82 +439,6 @@ def handleEvent():
                     GameVar.skip = 3
 
 
-# 创建是否到了画组件时间的方法
-def ifDoAction(lastTime, interval):
-    if lastTime == 0:
-        return True
-    currectTime = time.time()
-    return currectTime - lastTime >= interval
-
-
-def textInit(size, font):
-    font = pygame.font.Font(font, size)
-    return font
-
-
-class Font():
-    song_name = textInit(80, "ttfs/noto/NotoSansHans-Light.otf")
-    text = textInit(30, "ttfs/noto/NotoSansHans-Light.otf")
-    little_text = textInit(20, "ttfs/noto/NotoSansHans-Light.otf")
-    console = textInit(15, "ttfs/noto/NotoSansHans-Light.otf")
-    text_bold = textInit(30, "ttfs/noto/NotoSansHans-Bold.otf")
-    text_regular = textInit(30, "ttfs/noto/NotoSansHans-Regular.otf")
-    score = textInit(40, "ttfs/noto/NotoSansHans-Light.otf")
-
-
-def writeText(text, position, color=(255, 255, 255, 255), alpha=255, font=Font.text, is_middle=False,
-              is_right_bottom=False, is_right=False, move_pos=None, is_rect_and_color=(False, (255, 0, 0)), is_return_size=False):
-    text = font.render(text, True, color)
-    if is_middle:
-        pos = (position[0] - text.get_width() / 2, position[1] - text.get_height() / 2)
-        position = pos
-    elif is_right_bottom:
-        pos = (position[0] - text.get_width(),
-               position[1] - text.get_height())
-        position = pos
-    elif is_right:
-        pos = (position[0] - text.get_width(), position[1])
-        position = pos
-    elif move_pos is not None:
-        pos = (position[0] + move_pos[0], position[1] + move_pos[1])
-        position = pos
-    if not alpha == 255:
-        surface_under = pygame.Surface((text.get_width(), text.get_height()), SRCALPHA).convert()
-        surface_under.blit(text, (0, 0))
-        surface_under.set_alpha(alpha)
-        canvas.blit(surface_under, position)
-    else:
-        canvas.blit(text, position)
-    if is_rect_and_color[0]:
-        pygame.draw.rect(canvas, is_rect_and_color[1], (position[0], position[1], text.get_width(), text.get_height()),
-                         width=1)
-    if is_return_size:
-        return text.get_size()
-
-
-class Bgm():
-    def __init__(self, road, time):
-        self.road = road
-        self.time = time
-        self.lastTime = 0
-        self.interval = self.time
-
-    def set(self):
-        self.lastTime = 0
-
-    def play(self):
-        if not ifDoAction(self.lastTime, self.interval + 1):
-            return
-        self.lastTime = time.time()
-        self.bgm_init(self.road)
-        pygame.mixer.music.play()
-
-    def bgm_init(self, road):
-        pygame.mixer.init()
-        pygame.mixer.music.load(road)
-        pygame.mixer.music.set_volume(0.2)
-
-
 class EHRTObject():
     def __init__(self, x, y, width, height):
         self.x = x
@@ -554,44 +482,6 @@ class GameObject(EHRTObject):
                self.y - c.height < c.y < self.y + self.height
 
 
-<<<<<<< HEAD
-=======
-# 创建提示类
-class Message(EHRTObject):
-    def __init__(self, x, y, width, height, _from_, message):
-        EHRTObject.__init__(self, x, y, width, height)
-        self._from_ = _from_
-        self.from_display = "<" + self._from_ + ">"
-        self.message = message
-        self.alpha = 255
-        self.can_delete = False
-        self.summon_time = time.time()
-        self.speed = len(GameVar.messages) + 1
-
-    def set_y(self):
-        index = GameVar.messages.index(self)
-
-    def draw(self):
-        writeText(self.from_display + self.message, (self.x, self.y), (255, 255, 255), self.alpha, Font.console)
-
-    def check_time(self):
-        if not ifDoAction(self.summon_time, 1):
-            return
-        self.can_delete = True
-
-    def delete(self):
-        # 消失特效
-        # if self.can_delete:
-        #     # self.y -= len(GameVar.messages)
-        #     self.y -= 2
-        #     if self.y <= -15:
-        #         GameVar.messages.remove(self)
-        self.alpha -= 2
-        if self.alpha <= 0:
-            GameVar.messages.remove(self)
-
-
->>>>>>> parent of beb82a0 (develop 1.4.0.4 update)
 # 创建Hero类
 class Hero(GameObject):
     def __init__(self, life, defence):
@@ -606,9 +496,6 @@ class Hero(GameObject):
         self.main_rect = Rect(self.x, self.y, self.width, self.height)
 
     def draw(self):
-        # canvas.blit(self.CImg,(WIDTH/2 - 25,self.Cy))
-        # pygame.draw.rect(canvas,(0,0,0),self.rect)
-        # canvas.blit(self.mainImg, (self.x, self.y))
         pygame.draw.rect(canvas, self.colors[GameVar.gamemode], self.main_rect)
         canvas.blit(main_cover, (self.x, self.y))
         canvas.blit(self.pictures[GameVar.gamemode], (self.x, self.y))
@@ -635,23 +522,24 @@ class Hero(GameObject):
 
 
 # 创建背景类
-class BG():
+class BG:
     def __init__(self):
         self.number = 0
         self.x = 0
         self.y = 0
         self.if_night = True
         self.rect = Rect(0, 0, 1280, 720)
+        self.color = (255, 255, 255)
 
     def draw(self):
         if self.if_night:
             if GameVar.states == GameVar.STATES["HOME_1"]:
                 pygame.draw.rect(canvas, (42, 42, 63), BGblack)
             else:
-                pygame.draw.rect(canvas, (0, 0, 0), BGblack)
+                pygame.draw.rect(canvas, self.color, BGblack)
 
 
-class End():
+class End:
     def __init__(self):
         self.result = False
         self.score_img = score
@@ -688,227 +576,11 @@ class End():
         if self.score_x >= 0:
             self.score_x = 0
 
-
-<<<<<<< HEAD
-=======
-class Record():
-    def __init__(self, cph, cover):
-        self.cph = cph
-        if not cover is None:
-            self.cover = pygame.transform.scale(cover, (250, 250))
-        else:
-            self.cover = None
-        self.pos = (0, 0)
-
-    def set_pos(self, target=None, plus=None):
-        if plus is None:
-            self.pos = target
-        else:
-            self.pos = (self.pos[0] + plus[0], self.pos[1] + plus[1])
-
-    def changeCover(self, target):
-        self.cover = pygame.transform.scale(target, (250, 250))
-
-    def draw(self, canvas):
-        canvas.blit(self.cover, (self.pos[0] + 55, self.pos[1] + 55))
-        canvas.blit(self.cph, self.pos)
-
-
 def turnInt(target):
     if target:
         return 1
     else:
         return -1
-
-
-class SongChoose():
-    def __init__(self, cph):
-        self.cph = cph  # 唱片环图片
-        self.cphSize = self.cph.get_size()
-        self.cphWidth = self.cphSize[0]
-        self.cphWidth_2 = self.cphSize[0] / 2
-        self.cphHeight = self.cphSize[1]
-        self.cphHeight_2 = self.cphSize[1] / 2
-        self.imgs = []
-        self.imgs_road = []
-        # 三个唱片
-        self.record_dis = HEIGHT_2  # 两个唱片之间的距离
-        self.recordMain_orgin = (0, 0)  # record_main的初始位置
-        self.record_m = Record(self.cph, None)  # 中间的唱片
-        self.record_u = Record(self.cph, None)  # 上方的唱片
-        self.record_d = Record(self.cph, None)  # 下方的唱片
-        self.record_uu = Record(self.cph, None)  # 上方的上方的唱片
-        self.record_dd = Record(self.cph, None)  # 下方的下方的唱片
-        self.records = {"uu": self.record_uu, "up": self.record_u, "main": self.record_m,
-                        "down": self.record_d, "dd": self.record_dd}  # 唱片字典
-        self.number = 0  # 封面索引
-        self.speed = 0  # 移动速度
-        self.dire = False  # 此时的运动方向 False表向下移动，往上切换谱面
-        self.life = 0
-        self.start = False
-        # 描述
-        self.info_name = []
-        self.info_time = []
-        self.info_little_name = []
-        self.info_thisLittleName = ""
-        self.info_thisName = ""
-        self.info_thisTime = ""
-        self.info_pass = False
-        self.info_x = 300
-        self.info_y = 95
-
-    def recordInit(self, localNumber=0):
-        records_set = [self.record_uu, self.record_u, self.record_m, self.record_d, self.record_dd]
-        for i in range(0, len(records_set)):
-            rec = records_set[i]
-            this_pos = (WIDTH_2 - self.cphWidth_2, -self.cphHeight_2 + (i - 1) * HEIGHT_2)
-            rec.set_pos(this_pos)
-            index = localNumber - 2 + i
-            if index > len(self.imgs) - 1:
-                index = index - len(self.imgs)
-            rec.changeCover(self.imgs[index])
-            if i == 2:
-                self.recordMain_orgin = this_pos
-
-    def recordDraw(self):
-        for record in self.records:
-            self.records[record].draw(canvas)
-
-    def changeNumber(self, dire):
-        dire = turnInt(dire)
-        self.number += dire
-
-    def checkNumber(self):
-        if self.number < 0:
-            self.number = len(self.imgs) - 1
-        elif self.number > len(self.imgs) - 1:
-            self.number = 0
-
-    def set(self, ifCleanSpeed=True):
-        if ifCleanSpeed:
-            self.speed = 0
-        self.recordInit(self.number)
-
-    def forceControl(self, acceleration=50, maxSpeed=70):
-        global last_fps_time
-        self.speed = self.speed + acceleration * last_fps_time / 1000
-        if self.speed > maxSpeed:
-            self.speed = maxSpeed
-        return self.speed
-
-    def recordUpdate(self):
-        # 使除了uuRecord，其余的record跟随uu的方法
-        records_set = [self.record_u, self.record_m, self.record_d, self.record_dd]
-        for i in range(len(records_set)):
-            rec = records_set[i]
-            rec.set_pos((self.record_uu.pos[0], self.record_uu.pos[1] + (i + 1) * self.record_dis))
-
-    def recordStep(self, dire):
-        dire = -turnInt(dire)
-        self.records["uu"].set_pos(plus=(0, dire * self.forceControl()))
-        self.recordUpdate()
-
-    def recordCheck(self):
-        if self.records["main"].pos[1] < 0 - self.cphHeight_2 or self.records["main"].pos[
-            1] > HEIGHT - self.cphHeight_2:
-            message_summon("System", str(self.record_m.pos) + " 判定时")
-            list_temp = []
-            for rec in self.records:
-                list_temp.append(self.records[rec])
-            print(list_temp)
-            if self.dire:
-                temp = list_temp[0]
-                list_temp[0] = list_temp[-1]
-                list_temp.insert(1, temp)
-                list_temp.pop(-1)
-            else:
-                temp = list_temp[-1]
-                list_temp[-1] = list_temp[0]
-                list_temp.insert(-1, temp)
-                list_temp.pop(0)
-            resource = ["uu", "up", "main", "down", "dd"]
-            for i in range(0, len(resource)):
-                self.records[resource[i]] = list_temp[i]
-            self.record_uu = self.records["uu"]
-            self.record_u = self.records["up"]
-            self.record_m = self.records["main"]
-            self.record_d = self.records["down"]
-            self.record_dd = self.records["dd"]
-            self.changeNumber(self.dire)
-            self.checkNumber()
-            self.info_update()
-            self.set(False)
-
-    def checkMiddle(self):
-        # 检测record_main是否已经超过中间，是的话直接切换下一个
-        if self.dire:
-            if self.record_m.pos[1] < self.recordMain_orgin[1] - self.cphHeight / 2:
-                self.changeNumber(self.dire)
-                self.checkNumber()
-                self.info_update()
-        else:
-            if self.record_m.pos[1] > self.recordMain_orgin[1] + self.cphHeight / 2:
-                self.changeNumber(self.dire)
-                self.checkNumber()
-                self.info_update()
-
-    def checkLife(self):
-        # 检测生命值是不是低于等于0
-        if self.life <= 0:
-            self.start = False
-            self.life = 0
-
-    def infoInit(self):
-        i = 0
-        # 旧谱面导入
-        with open("data/song_name.txt", encoding="utf-8") as file:
-            for line in file:
-                if i == 0:
-                    self.info_name = eval(line.rstrip())
-                elif i == 1:
-                    self.info_little_name = eval(line.rstrip())
-                elif i == 2:
-                    self.info_time = eval(line.rstrip())
-                i += 1
-        self.info_thisName = self.info_name[0]
-        self.info_thisLittleName = self.info_little_name[0]
-        self.info_thisTime = self.info_time[0]
-
-    def info(self):
-        self.draw_info()
-
-    def info_update(self):
-        self.info_thisName = self.info_name[self.number]
-        self.info_thisLittleName = self.info_little_name[self.number]
-        self.info_thisTime = self.info_time[self.number]
-
-    def draw_info(self):
-        writeText(self.info_thisName, (self.info_x - 5, self.info_y), (255, 255, 255), 255, Font.song_name)
-        writeText(self.info_thisLittleName, (self.info_x, self.info_y + 100), (255, 255, 255), 255, Font.text)
-        writeText("时长：" + self.info_thisTime, (self.info_x, self.info_y + 150), (255, 255, 255), 255, Font.little_text)
-
-    def set_imgs(self):
-        # with open("data/songs.txt", encoding="gbk") as file:
-        #     for line in file:
-        #         self.imgs_road = eval(line.rstrip())
-        #         break
-        basic_road = "images/start/songs/"
-        for img_road in self.imgs_road:
-            self.imgs.append(pygame.image.load(basic_road + img_road).convert())
-
-    def draw(self):
-        self.recordDraw()
-        if GameVar.if_message:
-            pygame.draw.rect(canvas, (255, 255, 255), (self.record_m.pos[0], self.record_m.pos[1], 360, 360), width=1)
-            pygame.draw.rect(canvas, (255, 0, 255), (self.record_uu.pos[0], self.record_uu.pos[1], 360, 360), width=1)
-            pygame.draw.rect(canvas, (255, 0, 0), (self.record_u.pos[0], self.record_u.pos[1], 360, 360), width=1)
-            writeText("Record_Main: " + str(self.record_m.pos), (0, 300))
-            writeText("SongChoose.start: " + str(GameVar.songChoose.start), (0, 50))
->>>>>>> parent of beb82a0 (develop 1.4.0.4 update)
-
-
-
-
 
 # 创建Enemy类
 class Enemy(GameObject):
@@ -1021,14 +693,14 @@ class JudgeResult():
         self.combo = 0
         self.judges = {"Bad": self.bad, "Good": self.good, "Perfect": self.perfect, "Combo": self.combo}
         self.alpha = 255
-        self.text_size = writeText(self.result, (WIDTH - 3, 5), alpha=self.alpha, is_right=True, is_return_size=True)
+        self.text_size = writeText(self.result, (WIDTH - 3, 5), canvas, alpha=self.alpha, is_right=True, is_return_size=True)
 
     def draw(self):
-        writeText("Combo: " + str(self.combo), (WIDTH - 3, 7 + self.text_size[1]), is_right=True)
+        writeText("Combo: " + str(self.combo), (WIDTH - 3, 7 + self.text_size[1]), canvas, is_right=True)
         if self.result == "None":
             return
         if self.alpha > 0:
-            writeText(self.result, (WIDTH - 3, 5), alpha=self.alpha, is_right=True, is_return_size=True)
+            writeText(self.result, (WIDTH - 3, 5), canvas, alpha=self.alpha, is_right=True, is_return_size=True)
 
 
     def changeDisplay(self, result):
@@ -1062,7 +734,7 @@ class JudgeResult():
         if self.alpha <= 0:
             self.alpha = 0
 
-class Item_choose():
+class Item_choose:
     def __init__(self):
         self.state = 0
         self.this_item = -1
@@ -1137,7 +809,7 @@ class Item_choose():
             pos = (335 + self.compensatory[0] + self.index * (100 + 3),
                    76 + self.compensatory[1] + self.line * (100 + 3))
             canvas.blit(item.img, pos)
-            writeText(str(item.number), (pos[0] + 100, pos[1] + 100), is_right_bottom=True)
+            writeText(str(item.number), (pos[0] + 100, pos[1] + 100), canvas, is_right_bottom=True)
             self.index += 1
             if self.index > 5:
                 self.index = 0
@@ -1146,7 +818,7 @@ class Item_choose():
                 return True
 
     def write_start(self):
-        writeText(self.start, (WIDTH - 226, HEIGHT - 45))
+        writeText(self.start, (WIDTH - 226, HEIGHT - 45), canvas)
         if not ifDoAction(self.last_time, self.intertal):
             return
         self.last_time = time.time()
@@ -1339,7 +1011,7 @@ class GameVar:
     lastTime_of_save = 0
     interval_of_save = 300
     # 主界面背景音乐
-    main_page_bgm = Bgm("songs/main_page/E_nightSong.mp3", 267)
+    main_page_bgm = Bgm("songs/main_page/")
     # 当前歌曲长度
     this_song_long = 0
     # 当前游戏的模式
@@ -1347,7 +1019,7 @@ class GameVar:
     # 大厅
     lirb = "images/lobby/images/"  # lobby_images_road_basic
     lobbyObjects = [LobbyObject(0, 16, 62, 46, "land"), LobbyItem(0, 8, 22, 34, "bianligui"),
-                    LobbyItem(8, 6, 18, 18, "box"), LobbyItem(20, 4, 14, 27, "musicer"),
+                    LobbyItem(8, 6, 18, 18, "box"), LobbyItem(24, 4, 14, 27, "musicer"),
                     LobbyObject(0, 0, 62, 62, "fog"), LobbyObject(32, 22, 30, 38, "cover")]
     # ,LobbyItem(30, 5, 50, 50, "_yellow")]
     # 屏幕的x
@@ -1384,15 +1056,12 @@ class GameVar:
 
     judgeResult = JudgeResult("None", canvas)
 
-<<<<<<< HEAD
     dataLines = 0
 
     enemyLight = PotLight(50, (255, 255, 255), canvas)
 
     messageControl = MessageControl(canvas)
 
-=======
->>>>>>> parent of beb82a0 (develop 1.4.0.4 update)
     # 使用字典存储游戏进程
     STATES = {"HOME_0": 0, "HOME_1": 1, "SONGS_CHOOSE": 2, "SONGS_CHOOSE_2": 3, "START": 4, "ITEM": 5, "RUNNING": 6,
               "GAME_OVER": 7, "BOX": 8, "BOX_GET": 9, "LOBBY": 10, "SETTING": 11}
@@ -1626,11 +1295,10 @@ def end_animate():
     if GameVar.hero.life <= 0:
         if not GameVar.hero.Cstep() and GameVar.skip == -1:
             return
-        elif GameVar.skip == -1:
-            GameVar.skip = 0
-    else:
         if GameVar.skip == -1:
             GameVar.skip = 0
+    elif GameVar.skip == -1:
+        GameVar.skip = 0
     if GameVar.skip == 0:
         if GameVar.end.result:
             GameVar.hero.Cy = 385
@@ -1638,7 +1306,7 @@ def end_animate():
         GameVar.end.animate()
         GameVar.end.animateOver()
         if ifDoAction(GameVar.this_time + 1, 2):
-            writeText(str(GameVar.hero.score), (170, 239), (255, 228, 0), 255, Font.score)
+            writeText(str(GameVar.hero.score), (170, 239), canvas, color=(255, 228, 0), alpha=255, font=Font.score)
             GameVar.skip = 1
     elif GameVar.skip == 1:
         if GameVar.end.result:
@@ -1646,8 +1314,8 @@ def end_animate():
         GameVar.end.result_x = 0
         GameVar.end.score_x = 0
         GameVar.end.draw()
-        writeText(str(GameVar.hero.score), (170, 239), (255, 228, 0), 255, Font.score)
-        writeText(str(GameVar.end.coin_plus), (145, 302), (255, 228, 0), 255, Font.score)
+        writeText(str(GameVar.hero.score), (170, 239), canvas, color=(255, 228, 0),  alpha=255, font=Font.score)
+        writeText(str(GameVar.end.coin_plus), (145, 302), canvas, color=(255, 228, 0),  alpha=255, font=Font.score)
     elif GameVar.skip == 2:
         GameVar.end.draw()
         GameVar.states = GameVar.STATES["SONGS_CHOOSE"]
@@ -1827,7 +1495,7 @@ def control():
         pygame.mixer.init()
         bgm_play()
         GameVar.bg.draw()
-        writeText("按下任意键开始游戏", (WIDTH_2 - 135, HEIGHT - 60))
+        writeText("按下任意键开始游戏", (WIDTH_2 - 135, HEIGHT - 60), canvas)
     elif GameVar.states == GameVar.STATES["HOME_1"]:
         GameVar.bg.draw()
         bgm_play()
@@ -1923,7 +1591,7 @@ def control():
         i_plus = 0
         for i in range(len(GameVar.attrs)):
             if i < 2 or not GameVar.attrs[i] == str(attr_orgin[i]):
-                writeText(attr_name[i] + GameVar.attrs[i], (0, 40 * (i + i_plus)), attr_color[i])
+                writeText(attr_name[i] + GameVar.attrs[i], (0, 40 * (i + i_plus)), canvas, color=attr_color[i])
             else:
                 i_plus -= 1
         if GameVar.ifsongplaying == False and time.time() - GameVar.gameStart >= 1.2:
@@ -1960,23 +1628,36 @@ def control():
     elif GameVar.states == GameVar.STATES["GAME_OVER"]:
         GameVar.bg.draw()
         commentDraw()
-        GameVar.main_page_bgm.set()
+        # GameVar.main_page_bgm.set()
         end_animate()
     # 循环后执行
-<<<<<<< HEAD
-    GameVar.messageControl.message_main()
     message_state_change()
     if GameVar.messageControl.if_message:
-        writeText("fps:" + str(int(GameVar.fpsClock.get_fps())), (0, 620), canvas, (25, 25, 255), 255, Font.text)
-        writeText("coin:" + str(GameVar.coin), (0, 650), canvas, (25, 25, 255))
+        writeText("fps:" + str(int(GameVar.fpsClock.get_fps())), (0, 620), canvas, color=(25, 25, 255), font=Font.text)
+        writeText("coin:" + str(GameVar.coin), (0, 650), canvas, color=(25, 25, 255))
         betaMessage()
+        GameVar.messageControl.message_main()
     enterEffects()
-=======
-    message_main()
-    if GameVar.if_message:
-        writeText("fps:" + str(int(GameVar.fpsClock.get_fps())), (0, 620), (25, 25, 255), 255, Font.text)
-        writeText("coin:" + str(GameVar.coin), (0, 650), (25, 25, 255))
->>>>>>> parent of beb82a0 (develop 1.4.0.4 update)
+
+
+def betaMessage():
+    w, h = writeText("This is a beta version and you might meet some error or bug.If you meet them, please contact "
+                     "with me on github or QQ.", (WIDTH, 0), canvas, is_right=True, font=Font.console,
+                     is_return_size=True)
+    writeText("这是一个测试版本并且你可能会遇到一些错误和bug。如果你遇到了，请在github或者QQ上联系我。", (WIDTH, h), canvas, is_right=True, font=Font.console)
+
+
+enterAlpha = 255
+
+
+def enterEffects():
+    global enterAlpha, enter
+    if enterAlpha <= 0:
+        return
+    enter = pygame.Surface(SIZE, SRCALPHA).convert()
+    enter.set_alpha(enterAlpha)
+    canvas.blit(enter, (0, 0))
+    enterAlpha -= 1
 
 
 def gameInit():
@@ -1999,11 +1680,12 @@ def gameInit():
     #     sys.exit()
     loadNote()
     GameVar.songChoose.init(SIZE)
+    GameVar.main_page_bgm.init()
 
 
 gameInit()
 while True:
-    pygame.display.set_caption("八方" + VERSION + " fps:" + str(GameVar.fpsClock.get_fps()))
+    pygame.display.set_caption("八方 {0} {1}".format(VERSION, SIZE))
 
     last_fps_time = GameVar.fpsClock.tick(GameVar.fps)
 

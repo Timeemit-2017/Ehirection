@@ -288,13 +288,11 @@ class KeySetButton():
             surface_under.set_alpha(self.alpha)
             canvas.blit(surface_under, pos)
 
-<<<<<<< HEAD
 
-class ChooseSetButton(SetButton):
+class ChooseSetButton(KeySetButton):
     def __init__(self, buttontype, screen_size):
-        SetButton.__init__(self, buttontype, screen_size)
-=======
-    def checkRange(self, x, y, width, height):
+        KeySetButton.__init__(self, buttontype, screen_size)
+
+    def checkRange(self, x, y):
         return self.x < x < self.x + self.width and \
                self.y < y < self.y + self.height
->>>>>>> parent of beb82a0 (develop 1.4.0.4 update)

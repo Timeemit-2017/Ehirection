@@ -47,9 +47,9 @@ class Preview():
         self.word_dire = word_dire # 1 或 -1
         self.word_pos = (0, self.word_dire * self.word_surface.get_width())
         self.speed = 6
+        self.minus_size = (self.position[0] / 1920, self.position[1] / 1080)
     def set_pos(self,screen_size):
-        minus_size = (self.position[0] / 1920, self.position[1] / 1080)
-        self.position = (screen_size[0] * minus_size[0], screen_size[1] * minus_size[1])
+        self.position = (screen_size[0] * self.minus_size[0], screen_size[1] * self.minus_size[1])
     def draw_word(self,target):
         self.word_surface.blit(self.word, self.word_pos)
         target.blit(self.word_surface, (self.pos[0] - self.word_surface.get_width(), self.pos[1]))
