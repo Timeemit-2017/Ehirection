@@ -19,8 +19,9 @@ class SettingVar():
     keys = keys_default
 
 
-class Setting():
+class Setting:
     def __init__(self, video_size, orginDisplayType):
+        self.page = 0
         self.settings = []
         self.setting_index = 0
         self.image_index = 0
@@ -53,10 +54,10 @@ class Setting():
     def draw(self, canvas, mousePos="Old"):
         if mousePos == "Old":
             self.drawBg(canvas)
-            self.settings[self.setting_index].draw(canvas, self.position, self.position_orgin)
+            self.settings[0][self.setting_index].draw(canvas, self.position, self.position_orgin)
         else:
             for i in range(len(self.settings)):
-                self.settings[i].draw(canvas,
+                self.settings[0][i].draw(canvas,
                                       (self.position[0], self.position[1] + i * (self.space + self.textHeight)),
                                       self.position_orgin,
                                       mousePos
@@ -118,6 +119,8 @@ class Setting():
                 set.button.y = screen_size[1] * set.button.pos_ratio[1]
 
     def load_settings(self, settingType):
+        for i in range(1):
+            self.settings.append([])
         with open("data/settings.txt", encoding="UTF-8") as file:
             i = 0
             for line in file:
@@ -129,10 +132,10 @@ class Setting():
         SettingVar.keys = setting
         i = 0
         for key in SettingVar.keys:
-            self.settings.append(KeySet(key_set_titles[i], key, settingType, self.video_size))
+            self.settings[0].append(KeySet(key_set_titles[i], key, settingType, self.video_size))
             i += 1
-        self.settings[0].textRender()
-        self.textHeight = self.settings[0].text.get_height()
+        self.settings[0][0].textRender()
+        self.textHeight = self.settings[0][0].text.get_height()
 
     def mainBeforeDie(self, canvas):
         for set in self.settings:
@@ -143,7 +146,7 @@ class Setting():
         self.draw(canvas, mousePos)
         self.backGroundSwitch()
 
-    def main_old(self,canvas):
+    def main_old(self, canvas):
         for set in self.settings:
             set.textRender()
         self.draw(canvas)
@@ -197,10 +200,12 @@ class KeySet(Set):
     def input(self, key):
         self.attribute = key
         self.set(SettingVar.keys)
+        self.is_setting = True
         if self.key_text_resourse_state:
             self.key_text_resourse = pygame.key.name(self.attribute) + "_"
         else:
             self.key_text_resourse = pygame.key.name(self.attribute)
+
 
     def select_anime(self):
         if not self.select:
@@ -229,16 +234,16 @@ class KeySet(Set):
         key_text_size = self.key_text.get_size()
         if mousePos == "Old":
             self.pos = (position_orgin[0], position_orgin[1] + text_size[1] / 2)
-            self.button.draw(canvas)
+            self.button.draw(canvas, is_setting=self.select)
         else:
             self.pos = (position[0], position[1] + text_size[1] / 2)
-            self.button.draw(canvas, (self.pos[0] + 740, self.pos[1]), mousePos)
+            self.button.draw(canvas, (self.pos[0] + 740, self.pos[1]), mousePos, is_setting=self.select)
         canvas.blit(self.text, self.pos)
         canvas.blit(self.key_text, (self.button.x + self.button.width / 2 - key_text_size[0] / 2,
                                     self.button.y + self.button.height / 2 - key_text_size[1] / 2 - 4))
 
 
-class KeySetButton():
+class KeySetButton:
     def __init__(self, type, screen_size):
         self.type = type
         if type == "small" or not type:
@@ -260,6 +265,13 @@ class KeySetButton():
         self.height *= times
         self.pos_ratio = (self.x / screen_size[0], self.y / screen_size[1])
         self.img = pygame.transform.scale(self.img_resourse, (self.width, self.height))
+        self.img_is_settting = self.img.copy()
+        shade_strength = 75
+        s = shade_strength
+        for y in range(self.height):
+            for x in range(self.width):
+                r, g, b, a = tuple(self.img_is_settting.get_at((x, y)))
+                self.img_is_settting.set_at((x, y), (r - s / 2 , g - s / 2, b - s))
         self.alpha = 0
 
     def changeType(self, target, screen_size):
@@ -269,12 +281,18 @@ class KeySetButton():
             target = "small"
         self.__init__(target, screen_size)
 
-    def draw(self, canvas, pos="Old", mousePos="Old"):
+    def draw(self, canvas, pos="Old", mousePos="Old", is_setting=False):
         if pos == "Old" and mousePos == "Old":
+            if is_setting:
+                canvas.blit(self.img_is_settting, (self.x, self.y))
+                return
             canvas.blit(self.img, (self.x, self.y))
         else:
             self.x = pos[0]
             self.y = pos[1]
+            if is_setting:
+                canvas.blit(self.img_is_settting, (self.x, self.y))
+                return
             if self.checkRange(mousePos[0], mousePos[1], 1, 1):
                 self.alpha += 25
                 if self.alpha >= 255:

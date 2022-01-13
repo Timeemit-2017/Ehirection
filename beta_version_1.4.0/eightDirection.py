@@ -344,6 +344,8 @@ def handleEvent():
                                 set.select = True
                                 setIndex = i
                                 GameVar.messageControl.message_summon("System", str(i))
+                        else:
+                            set.select = False
                 elif event.type == KEYUP and GameVar.setting.settings[setIndex].select:
                     GameVar.messageControl.message_summon("System", "setKey")
                     GameVar.setting.settings[setIndex].input(event.key)
