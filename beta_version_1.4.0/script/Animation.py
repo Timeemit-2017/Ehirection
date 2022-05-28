@@ -32,7 +32,7 @@ class MoveObject(object):
 
 
 class Sprite(object):
-    def __init__(self,source,position,pos,size,interval):
+    def __init__(self, source, position, pos, size, interval):
         self.source = source
         self.position = position
         self.position_origin = self.position
@@ -41,11 +41,13 @@ class Sprite(object):
         self.index = 0
         self.interval = interval
         self.lastTime = time.time()
-        self.minus_size = (self.position[0] / 1280, self.position[1] / 720)
+        # self.minus_size = (self.position[0] / 1280, self.position[1] / 720)
+        self.originScreenSize = (1280, 720)
+        self.originPoint = (0, 0)
 
     def draw(self, target):
         draw_range = (self.pos[self.index][0], self.pos[self.index][1], self.size[0], self.size[1])
-        target.blit(self.source, self.position, draw_range)
+        target.blit(self.source, (self.position[0] + self.originPoint[0], self.position[1] + self.originPoint[1]), draw_range)
 
     def animation(self, target, start, end, if_set=True):
         self.draw(target)
@@ -65,8 +67,11 @@ class Sprite(object):
         self.index = 0
         self.lastTime = time.time()
 
-    def set_pos(self,screen_size):
-        self.position = (screen_size[0] * self.minus_size[0], screen_size[1] * self.minus_size[1])
+    def set_pos(self, screen_size):
+        # 要求：screen_size必须大于 (1280, 720)，否则会有兼容性问题
+        #self.position = (screen_size[0] * self.minus_size[0], screen_size[1] * self.minus_size[1])
+
+        self.originPoint = (screen_size[0] / 2 - self.originScreenSize[0] / 2, screen_size[1] / 2 - self.originScreenSize[1] / 2)
 
     def ifDoAction(self,lastTime, interval):
         if lastTime == 0:

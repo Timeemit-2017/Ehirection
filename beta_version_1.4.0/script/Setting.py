@@ -54,14 +54,17 @@ class Setting:
     def draw(self, canvas, mousePos="Old"):
         if mousePos == "Old":
             self.drawBg(canvas)
-            self.settings[0][self.setting_index].draw(canvas, self.position, self.position_orgin)
+            self.getSet(self.setting_index).draw(canvas, self.position, self.position_orgin)
         else:
+            offset = 0
             for i in range(len(self.settings)):
-                self.settings[0][i].draw(canvas,
-                                      (self.position[0], self.position[1] + i * (self.space + self.textHeight)),
-                                      self.position_orgin,
-                                      mousePos
-                                      )
+                for j in range(len(self.settings[i])):
+                    self.settings[i][j].draw(canvas,
+                          (self.position[0], self.position[1] + (offset + j) * (self.space + self.textHeight)),
+                          self.position_orgin,
+                          mousePos
+                          )
+                offset += len(self.settings)
         # self.settings[self.setting_index].draw(canvas, self.position)
 
     def drawButton(self, canvas):
@@ -69,8 +72,8 @@ class Setting:
 
     def step(self, dire, HEIGHT):
         # dire为-1, 向上， 为1， 向下
-        pos1 = self.settings[0].pos[1] + dire * self.moveSpace
-        pos2 = self.settings[-1].pos[1] + dire * self.moveSpace
+        pos1 = self.getSet(0).pos[1] + dire * self.moveSpace
+        pos2 = self.getSet(-1).pos[1] + dire * self.moveSpace
         if pos1 > self.up:
             self.position[1] = self.up
             return "已到顶部 pos1:" + str(pos1)
@@ -93,10 +96,10 @@ class Setting:
 
     def setting_index_switch(self, dire):
         self.setting_index += dire * 1
-        if self.setting_index >= len(self.settings):
+        if self.setting_index >= self.getAllLength():
             self.setting_index = 0
         elif self.setting_index < 0:
-            self.setting_index = len(self.settings) - 1
+            self.setting_index = self.getAllLength() - 1
 
     def ifDoAction(self, lastTime, interval):
         if lastTime == 0:
@@ -119,8 +122,6 @@ class Setting:
                 set.button.y = screen_size[1] * set.button.pos_ratio[1]
 
     def load_settings(self, settingType):
-        for i in range(1):
-            self.settings.append([])
         with open("data/settings.txt", encoding="UTF-8") as file:
             i = 0
             for line in file:
@@ -128,18 +129,34 @@ class Setting:
                     setting = eval(line.rstrip())
                 elif i == 1:
                     key_set_titles = eval(line.rstrip())
+                elif i == 2:
+                    bool_sets = eval(line.rstrip())
+                elif i == 3:
+                    bool_sets_titles = eval(line.rstrip())
+                elif i == 4:
+                    str_sets = eval(line.rstrip())
+                elif i == 5:
+                    str_sets_titles = eval(line.rstrip())
+                elif i == 6:
+                    choosing_sets = eval(line.rstrip())
+                elif i == 7:
+                    choosing_sets_titles = eval(line.rstrip())
                 i += 1
+        for j in range(int(i / 2)):
+            self.settings.append([])
         SettingVar.keys = setting
         i = 0
         for key in SettingVar.keys:
             self.settings[0].append(KeySet(key_set_titles[i], key, settingType, self.video_size))
             i += 1
+        print(self.settings[0])
         self.settings[0][0].textRender()
         self.textHeight = self.settings[0][0].text.get_height()
 
     def mainBeforeDie(self, canvas):
-        for set in self.settings:
-            set.textRender()
+        for i in range(len(self.settings)):
+            for set in self.settings[i]:
+                set.textRender()
         self.drawBg(canvas)
 
     def mainAfterDie(self, canvas, mousePos):
@@ -147,10 +164,24 @@ class Setting:
         self.backGroundSwitch()
 
     def main_old(self, canvas):
-        for set in self.settings:
-            set.textRender()
+        for i in range(len(self.settings)):
+            for set in self.settings[i]:
+                set.textRender()
         self.draw(canvas)
         self.backGroundSwitch()
+
+    def getSet(self, index):
+        temp = []
+        for i in range(len(self.settings)):
+            for set in self.settings[i]:
+                temp.append(set)
+        return temp[index]
+
+    def getAllLength(self):
+        length = 0
+        for i in range(len(self.settings)):
+            length += len(self.settings[i])
+        return length
 
 
 class Set(object):
@@ -226,8 +257,8 @@ class KeySet(Set):
         self.text = SettingVar.font.render(self.title, True, SettingVar.font_color)
         self.key_text = SettingVar.font.render(self.key_text_resourse, True, SettingVar.font_color)
 
-    def checkRange(self, x, y, width, height):
-        return self.button.checkRange(x, y, width, height)
+    def checkRange(self, x, y):
+        return self.button.checkRange(x, y)
 
     def draw(self, canvas, position, position_orgin, mousePos="Old"):
         text_size = self.text.get_size()
@@ -271,7 +302,7 @@ class KeySetButton:
         for y in range(self.height):
             for x in range(self.width):
                 r, g, b, a = tuple(self.img_is_settting.get_at((x, y)))
-                self.img_is_settting.set_at((x, y), (r - s / 2 , g - s / 2, b - s))
+                self.img_is_settting.set_at((x, y), (r - s / 2, g - s / 2, b - s))
         self.alpha = 0
 
     def changeType(self, target, screen_size):
@@ -293,7 +324,7 @@ class KeySetButton:
             if is_setting:
                 canvas.blit(self.img_is_settting, (self.x, self.y))
                 return
-            if self.checkRange(mousePos[0], mousePos[1], 1, 1):
+            if self.checkRange(mousePos[0], mousePos[1]):
                 self.alpha += 25
                 if self.alpha >= 255:
                     self.alpha = 255
@@ -306,11 +337,16 @@ class KeySetButton:
             surface_under.set_alpha(self.alpha)
             canvas.blit(surface_under, pos)
 
+    def checkRange(self, x, y):
+        return self.x < x < self.x + self.width and \
+               self.y < y < self.y + self.height
+
 
 class ChooseSetButton(KeySetButton):
     def __init__(self, buttontype, screen_size):
         KeySetButton.__init__(self, buttontype, screen_size)
 
-    def checkRange(self, x, y):
-        return self.x < x < self.x + self.width and \
-               self.y < y < self.y + self.height
+
+class ValueSetButton(KeySetButton):
+    def __init__(self, buttontype, screen_size):
+        KeySetButton.__init__(self, buttontype, screen_size)

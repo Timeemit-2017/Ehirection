@@ -216,11 +216,12 @@ class Box_result():
         WIDTH = VIDEOSIZE[0]
         HEIGHT = VIDEOSIZE[1]
         self.state = 0
-        self.times = int(WIDTH / 320)
+        # self.times = int(WIDTH / 320)
+        self.times = 4
         t = self.times
         self.background = pygame.Surface((320, 180))
         self.box_sprite = Sprite(pygame.transform.scale(pygame.image.load("images/box/boxes.png"), (183, 45)),
-                                 (127, 118),
+                                 (135 - 5, 125),
                                  [(0, 0), (61, 0), (122, 0)],
                                  (61, 45),
                                  0.2
@@ -238,8 +239,8 @@ class Box_result():
         mask = pygame.image.load("images/box/box_light_mask.png")
         # mask = pygame.transform.scale(mask, (320, 180))
         for color in colors:
-            self.lights.append(Box_Light(color, mask, SIZE))
-            self.lights.append(Box_Light((0, 0, 0), mask, SIZE))
+            self.lights.append(Box_Light(color, mask, SIZE, self.background.get_size()))
+            self.lights.append(Box_Light((0, 0, 0), mask, SIZE, self.background.get_size()))
 
     def draw_result(self, canvas, die, last_fps_time):
         canvas.blit(die, (0, 0))
@@ -369,6 +370,7 @@ class Box_result():
                     self.item_animations.append(self.item_animations_orgin[self.light_index])
         canvas.blit(pygame.transform.scale(self.background, (320 * self.times, 180 * self.times)),
                     (WIDTH_2 - 320 * self.times / 2, HEIGHT_2 - 180 * self.times / 2))
+        pygame.draw.rect(canvas, (255, 0, 0), (WIDTH_2 - 320 * self.times / 2, HEIGHT_2 - 180 * self.times / 2, 320 * self.times, 180 * self.times), width=1)
         if self.state == 3:
             self.index = len(self.lights) - 1
             self.draw_box()
@@ -388,26 +390,30 @@ class Box_result():
         # message_summon("System", "box_get_reset")
 
 class Box_Light():
-    def __init__(self, color, mask, video_size):
+    def __init__(self, color, mask, video_size, target_size):
         self.color = color
         self.mask_orgin = mask
         self.mask = self.mask_orgin
         self.video_size = video_size
-        self.color_surface = pygame.Surface(video_size)
+        self.color_surface = pygame.Surface(target_size)
         self.color_surface.fill(self.color)
         # self.color_surface.set_alpha(125)
         self.color_surface_orgin = self.color_surface
+        self.originScreenSize = (1280, 720)
+        self.originPoint = (-5, 0)
 
     def draw_bottom(self, target, cover):
-        target.blit(self.color_surface, (0, 0))
+        target.blit(self.color_surface, self.originPoint)
         # cover.blit(self.color_surface, (0,0))
 
     def draw_mask(self, target):
-        target.blit(self.mask, (0, 0))
+        target.blit(self.mask, self.originPoint)
 
     def change_scale(self, size):
         self.color_surface = pygame.transform.scale(self.color_surface_orgin, size)
         self.mask = pygame.transform.scale(self.mask_orgin, size)
+        # self.originPoint = (size[0] / 2 - self.originScreenSize[0] / 2, size[1] / 2 - self.originScreenSize[1] / 2)
+
 
 class Box_Item_Animation():
     def __init__(self, img, end_pos, color):

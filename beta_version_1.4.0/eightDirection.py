@@ -147,7 +147,7 @@ def handleEvent():
     E_MOUSE_POS = pygame.mouse.get_pos()
     E_KEY_PRESSED = pygame.key.get_pressed()
     SETTING = GameVar.setting
-    THIS_SET = SETTING.settings[SETTING.setting_index]
+    THIS_SET = SETTING.getSet(SETTING.setting_index)
     # 设置键位
     KEYS = SettingVar.keys
     for event in E_EVENTS:
@@ -203,7 +203,7 @@ def handleEvent():
             GameVar.setting.change_scale((WIDTH, HEIGHT))
 
             GameVar.box_animation.change_scale((WIDTH, HEIGHT))
-            GameVar.box_result.box_sprite.set_pos((WIDTH, HEIGHT))
+            #GameVar.box_result.box_sprite.set_pos((WIDTH, HEIGHT))
             for button in GameVar.box_animation.buttons:
                 button.set_pos((WIDTH, HEIGHT))
 
@@ -324,8 +324,9 @@ def handleEvent():
                 else:
                     GameVar.setting.changeDisplayType("Old")
                     GameVar.settingsOldOrNew = "Old"
-                for set in SETTING.settings:
-                    set.button.changeType(GameVar.settingsOldOrNew, SIZE)
+                for i in range(len(SETTING.settings)):
+                    for set in SETTING.settings[i]:
+                        set.button.changeType(GameVar.settingsOldOrNew, SIZE)
                 GameVar.setting.change_scale(SIZE)
 
             if GameVar.settingsOldOrNew == "New":
@@ -346,21 +347,19 @@ def handleEvent():
                                 GameVar.messageControl.message_summon("System", str(i))
                         else:
                             set.select = False
-                elif event.type == KEYUP and GameVar.setting.settings[setIndex].select:
+                elif event.type == KEYUP and GameVar.setting.getSet(setIndex).select:
                     GameVar.messageControl.message_summon("System", "setKey")
-                    GameVar.setting.settings[setIndex].input(event.key)
+                    GameVar.setting.getSet(setIndex).input(event.key)
             else:
                 if not THIS_SET.select:
                     if event.type == KEYUP and event.key == K_UP:
                         SETTING.setting_index_switch(-1)
                     elif event.type == KEYUP and event.key == K_DOWN:
                         SETTING.setting_index_switch(1)
-                    if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0],
-                                                                                                   event.pos[1], 1, 1):
+                    if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0], event.pos[1]):
                         THIS_SET.select = True
                 else:
-                    if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0],
-                                                                                                   event.pos[1], 1, 1):
+                    if event.type == MOUSEBUTTONDOWN and event.button == 1 and THIS_SET.checkRange(event.pos[0], event.pos[1]):
                         THIS_SET.select = False
                     elif event.type == KEYUP:
                         THIS_SET.input(event.key)
@@ -531,7 +530,7 @@ class BG:
         self.y = 0
         self.if_night = True
         self.rect = Rect(0, 0, 1280, 720)
-        self.color = (255, 255, 255)
+        self.color = (0, 0, 0)
 
     def draw(self):
         if self.if_night:
@@ -1506,6 +1505,7 @@ def control():
     elif GameVar.states == GameVar.STATES["LOBBY"]:
         # print(LobbyVar.times)
         GameVar.bg.draw()
+        bgm_play()
         hall_main()
     elif GameVar.states == GameVar.STATES["SETTING"]:
         GameVar.bg.draw()
