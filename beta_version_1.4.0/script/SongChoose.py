@@ -17,7 +17,7 @@ class SongChoose:
         self.imgs = []
         self.imgs_road = []
         # 三个唱片
-        self.record_dis = HEIGHT_2  # 两个唱片之间的距离
+        self.record_dis = self.cphHeight + 100  # 两个唱片之间的距离
         if self.record_dis < self.cphHeight:
             self.record_dis = self.cphHeight
         self.recordMain_orgin = (0, 0)  # record_main的初始位置

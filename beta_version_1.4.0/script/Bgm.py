@@ -14,6 +14,7 @@ class Bgm:
         self.songIndex = 0  # 歌曲编号
         self.path = ""
         self.start = "init"  # 是否为刚启动的标识
+        self.allowFlag = False
 
     def init(self):
         self.songs = os.listdir(self.road)
@@ -27,13 +28,14 @@ class Bgm:
         self.lastTime = 0
 
     def play(self):
-        if not ifDoAction(self.lastTime, self.interval + 1):
+        if not ifDoAction(self.lastTime, self.interval + 1) or self.allowFlag:
             return
         self.lastTime = time.time()
-        if self.start is not "init":
+        if self.start is not "init" or self.allowFlag == True:
             self.set()
         self.bgm_init()
         pygame.mixer.music.play()
+        self.allowFlag = False
 
     def bgm_init(self):
         pygame.mixer.init()

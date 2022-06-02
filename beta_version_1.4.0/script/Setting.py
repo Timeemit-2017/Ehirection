@@ -17,7 +17,12 @@ class SettingVar():
                     "start_indexDesigner": K_F2
                     }
     keys = keys_default
-
+    bools_default = {"if_message": False, "setting_style": False, "if_full_screen": False}
+    bools = bools_default
+    blanks_default = {"email": "*custom"}
+    blanks = blanks_default
+    choosing_default = {"songchoose_distance": ["HEIGHT_2", "HEIGHT", "*custom"], "screen_size": ["*system"]}
+    choosing = choosing_default
 
 class Setting:
     def __init__(self, video_size, orginDisplayType):
@@ -34,10 +39,13 @@ class Setting:
         self.changeDisplayType(orginDisplayType)
         self.space = 40
         self.moveSpace = 50
-        self.up = 40
-        self.down = 40
+        self.up = 40 #上边距
+        self.down = 40 #下边距
         self.textHeight = 0
         self.position_orgin = []
+        self.sets = []
+        # self.position = None
+        # self.position_ratio = None
         for i in range(0, 4):
             image_resourse = pygame.image.load("images/setting/main" + str(i) + ".png")
             image = pygame.transform.scale(image_resourse, (64 * SettingVar.times, 36 * SettingVar.times))
@@ -78,7 +86,8 @@ class Setting:
             self.position[1] = self.up
             return "已到顶部 pos1:" + str(pos1)
         elif pos2 < HEIGHT - self.down - self.textHeight:
-            self.position[1] = HEIGHT - self.down - (len(self.settings)) * (self.space + self.textHeight)
+
+            self.position[1] = HEIGHT - self.down - (self.getAllLength()) * (self.space + self.textHeight)
             return "已到底部 pos2:" + str(pos2)
         else:
             self.position[1] = pos1
@@ -147,7 +156,9 @@ class Setting:
         SettingVar.keys = setting
         i = 0
         for key in SettingVar.keys:
-            self.settings[0].append(KeySet(key_set_titles[i], key, settingType, self.video_size))
+            temp = KeySet(key_set_titles[i], key, settingType, self.video_size)
+            self.settings[0].append(temp)
+            self.sets.append(temp)
             i += 1
         print(self.settings[0])
         self.settings[0][0].textRender()
@@ -171,17 +182,19 @@ class Setting:
         self.backGroundSwitch()
 
     def getSet(self, index):
-        temp = []
-        for i in range(len(self.settings)):
-            for set in self.settings[i]:
-                temp.append(set)
-        return temp[index]
+        # temp = []
+        # for i in range(len(self.settings)):
+        #     for set in self.settings[i]:
+        #         temp.append(set)
+        # return temp[index]
+        return self.sets[index]
 
     def getAllLength(self):
-        length = 0
-        for i in range(len(self.settings)):
-            length += len(self.settings[i])
-        return length
+        # length = 0
+        # for i in range(len(self.settings)):
+        #     length += len(self.settings[i])
+        # return length
+        return len(self.sets)
 
 
 class Set(object):
@@ -276,15 +289,53 @@ class KeySet(Set):
 
 class KeySetButton:
     def __init__(self, type, screen_size):
+        times = SettingVar.times
+        self.smallImg = pygame.transform.scale(pygame.image.load("images/setting/buttons/small_button.png"), (9 * times, 4 * times))
+        self.smallIsSetting = self.smallImg.copy()
+        self.bigImg = pygame.transform.scale(pygame.image.load("images/setting/buttons/big_button.png"), (16 * times, 6 * times))
+        self.bigIsSetting = self.bigImg.copy()
+
+        shade_strength = 75
+        s = shade_strength
+        for y in range(4 * times):
+            for x in range(9 * times):
+                r, g, b, a = tuple(self.smallIsSetting.get_at((x, y)))
+                self.smallIsSetting.set_at((x, y), (r - s / 2, g - s / 2, b - s))
+        for y in range(6 * times):
+            for x in range(16 * times):
+                r1, g1, b1, a1 = tuple(self.bigIsSetting.get_at((x, y)))
+                self.bigIsSetting.set_at((x, y), (r1 - s / 2, g1 - s / 2, b1 - s))
+        self.alpha = 0
+
+        self.type = None
+        self.x = 0
+        self.y = 0
+        self.width = 0
+        self.height = 0
+        self.pos_ratio = None
+        self.img = None
+        self.img_is_settting = None
+        self.reset(type, screen_size)
+
+    def changeType(self, target, screen_size):
+        if target == "Old":
+            target = "big"
+        else:
+            target = "small"
+        self.reset(target, screen_size)
+
+    def reset(self, type, screen_size):
         self.type = type
         if type == "small" or not type:
-            self.img_resourse = pygame.image.load("images/setting/buttons/small_button.png")
+            self.img = self.smallImg
+            self.img_is_settting = self.smallIsSetting
             self.x = 51
             self.y = 10
             self.width = 9
             self.height = 4
         elif type == "big" or type:
-            self.img_resourse = pygame.image.load("images/setting/buttons/big_button.png")
+            self.img = self.bigImg
+            self.img_is_settting  = self.bigIsSetting
             self.x = 42
             self.y = 8
             self.width = 16
@@ -295,22 +346,6 @@ class KeySetButton:
         self.width *= times
         self.height *= times
         self.pos_ratio = (self.x / screen_size[0], self.y / screen_size[1])
-        self.img = pygame.transform.scale(self.img_resourse, (self.width, self.height))
-        self.img_is_settting = self.img.copy()
-        shade_strength = 75
-        s = shade_strength
-        for y in range(self.height):
-            for x in range(self.width):
-                r, g, b, a = tuple(self.img_is_settting.get_at((x, y)))
-                self.img_is_settting.set_at((x, y), (r - s / 2, g - s / 2, b - s))
-        self.alpha = 0
-
-    def changeType(self, target, screen_size):
-        if target == "Old":
-            target = "big"
-        else:
-            target = "small"
-        self.__init__(target, screen_size)
 
     def draw(self, canvas, pos="Old", mousePos="Old", is_setting=False):
         if pos == "Old" and mousePos == "Old":

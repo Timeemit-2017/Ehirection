@@ -35,6 +35,7 @@ from script.PotLight import PotLight
 from script.Message import *
 from script.SongChoose import *
 from script.Bgm import *
+from script.Account_Item import *
 
 # 初始化
 pygame.init()
@@ -307,10 +308,11 @@ def handleEvent():
                 else:
                     button.animation(False)
         elif GameVar.states == GameVar.STATES["BOX_GET"]:
-            if event.type == KEYUP and event.key == K_ESCAPE:
+            if event.type == KEYUP and event.key == K_ESCAPE and GameVar.box_result.state == 3:
                 GameVar.states = GameVar.STATES["BOX"]
                 return
-            elif event.type == KEYUP and event.key == K_RETURN:
+
+            elif event.type == KEYUP and event.key == K_RETURN or event.type == KEYUP and event.key == K_ESCAPE and GameVar.box_result.state != 3:
                 GameVar.box_result.skip(GameVar, SIZE)
         elif GameVar.states == GameVar.STATES["SETTING"]:
             if event.type == KEYUP and event.key == K_ESCAPE:
@@ -336,9 +338,9 @@ def handleEvent():
                     if result:
                         GameVar.messageControl.message_summon("System", result)
                 elif event.type == MOUSEBUTTONDOWN and event.button == 1:
-                    for i in range(len(GameVar.setting.settings)):
-                        set = GameVar.setting.settings[i]
-                        if set.checkRange(E_MOUSE_POS[0], E_MOUSE_POS[1], 1, 1):
+                    for i in range(len(GameVar.setting.sets)):
+                        set = GameVar.setting.sets[i]
+                        if set.checkRange(E_MOUSE_POS[0], E_MOUSE_POS[1]):
                             if set.select:
                                 set.select = False
                             else:
@@ -590,8 +592,7 @@ class Enemy(GameObject):
         self.number = number
         self.attack = enemyAttack
         self.delete = False
-        self.hero_distance = 385
-        self.DM_distance = self.hero_distance - 85
+        self.hero_distance = GameVar.moveSpeed * GameVar.moveTime
         if self.number == 0:
             self.x = GameVar.DMcomp[self.number].x
             self.y = GameVar.DMcomp[self.number].y - self.hero_distance
@@ -612,18 +613,8 @@ class Enemy(GameObject):
             0.1
         )
 
-    def getDistanceToHero(self):
-        if self.number == 0:
-            self.y += speedFrame
-        elif self.number == 1:
-            self.x -= speedFrame
-        elif self.number == 2:
-            self.y -= speedFrame
-        elif self.number == 3:
-            self.x += speedFrame
-
     def step(self):
-        speedSec = self.hero_distance / 1.2
+        speedSec = GameVar.moveSpeed
         speedFrame = speedSec * last_fps_time / 1000
         if self.number == 0:
             self.y += speedFrame
@@ -651,7 +642,7 @@ class Enemy(GameObject):
             dis = abs(self.y - ty)
         elif self.y == ty:
             dis = abs(self.x - tx)
-        else:  # 求此对象重点与目标中点的距离
+        else:  # 求此对象中点与目标中点的距离
             thisMiddle = (self.x + self.width / 2, self.y + self.height / 2)
             targetMiddle = (tx + twidth / 2, ty + theight / 2)
             x = abs(thisMiddle[0] - targetMiddle[0])
@@ -903,37 +894,35 @@ class Home(AnimateObject):
         GameVar.box_result.draw_result(1, self.list)
 
 
-# 存储在存档中的物品类
-class Account_Item():
-    def __init__(self, id, number):
-        self.id = id
-        self.number = number
-        self.item = ITEMS.get_item(self.id)
-        self.img = self.item.img
-        self.quality = self.item.quality
-        self.type = self.item.type
-        self.name = self.item.name
-
-    def update_old(self):
-        if self.type == "material" or self.type == "effect_m" or self.type == "noneffect_m":
-            if self.number <= 0:
-                self.remove()
-            elif self.number >= 99:
-                self.number = 99
-        else:
-            self.number = 1
-
-    def update(self):
-        if self.number <= 0:
-            self.remove()
-        elif self.number >= 99:
-            self.number = 99
-
-    def remove(self):
-        GameVar.backpack.remove(self)
 
 
 class GameVar:
+
+    # 存储玩家信息
+    def save():
+        backpack = []
+        for item in GameVar.backpack:
+            backpack.append([item.id, item.number])
+        data = {'coin': GameVar.coin, "backpack": backpack}
+        data = str(data)
+        with open("data/player.txt", "w") as file:
+            file.write(data)
+        i = 0
+        with open("data/settings.txt", "r", encoding="UTF-8") as file:
+            lines = file.readlines()
+        with open("data/settings.txt", "w", encoding="UTF-8") as file:
+            for line in lines:
+                if i == 0:
+                    line = str(SettingVar.keys) + "\n"
+                    file.write(line)
+                else:
+                    file.write(line)
+                i += 1
+
+    moveTime = 1.2
+
+    moveSpeed = 320.833 * 1.5
+
     hero = Hero(50.0, 0.0)
     # 英雄初始数值
     hero_defeat = hero.defeat
@@ -1072,10 +1061,13 @@ class GameVar:
     states = STATES["HOME_0"]
     last_state = states
 
+    ITEMS = None
+
 
 # 物品的图片列表
 ITEMS = Items(GameVar, canvas)
 
+GameVar.ITEMS = ITEMS
 
 # items=[ITEMS.get_item(0),ITEMS.get_item(1),ITEMS.get_item(2)]
 
@@ -1096,7 +1088,7 @@ class DMcomponent():
         self.set()
 
     def set(self):
-        dis = 85
+        dis = 115
         if GameVar.gamemode == "yellow":
             if self.number == 0:
                 self.x = GameVar.hero.x
@@ -1252,6 +1244,7 @@ def song_init():
 
 def item_init(item_name):
     GameVar.hero.defeat = 0
+    ITEMS.reset(GameVar, canvas)
     if GameVar.item_use == "null":
         return
     if item_name == "Star_light":
@@ -1320,30 +1313,32 @@ def end_animate():
     elif GameVar.skip == 2:
         GameVar.end.draw()
         GameVar.states = GameVar.STATES["SONGS_CHOOSE"]
-        pygame.mixer.quit()
+        # GameVar.main_page_bgm.allowFlag = True
+        GameVar.main_page_bgm.set()
+        # pygame.mixer.quit()
 
 
 # 存储玩家信息
 def save():
-    backpack = []
-    for item in GameVar.backpack:
-        backpack.append([item.id, item.number])
-    data = {'coin': GameVar.coin, "backpack": backpack}
-    data = str(data)
-    with open("data/player.txt", "w") as file:
-        file.write(data)
-    i = 0
-    with open("data/settings.txt", "r", encoding="UTF-8") as file:
-        lines = file.readlines()
-    with open("data/settings.txt", "w", encoding="UTF-8") as file:
-        for line in lines:
-            if i == 0:
-                line = str(SettingVar.keys) + "\n"
-                file.write(line)
-            else:
-                file.write(line)
-            i += 1
-
+    # backpack = []
+    # for item in GameVar.backpack:
+    #     backpack.append([item.id, item.number])
+    # data = {'coin': GameVar.coin, "backpack": backpack}
+    # data = str(data)
+    # with open("data/player.txt", "w") as file:
+    #     file.write(data)
+    # i = 0
+    # with open("data/settings.txt", "r", encoding="UTF-8") as file:
+    #     lines = file.readlines()
+    # with open("data/settings.txt", "w", encoding="UTF-8") as file:
+    #     for line in lines:
+    #         if i == 0:
+    #             line = str(SettingVar.keys) + "\n"
+    #             file.write(line)
+    #         else:
+    #             file.write(line)
+    #         i += 1
+    GameVar.save()
 
 # 加载玩家信息
 def load():
@@ -1355,7 +1350,7 @@ def load():
     GameVar.coin = data['coin']
     backpack = data["backpack"]
     for item in backpack:
-        GameVar.backpack.append(Account_Item(item[0], item[1]))
+        GameVar.backpack.append(Account_Item(item[0], item[1], ITEMS))
 
 
 def lobby_main():
@@ -1422,7 +1417,7 @@ def loadNote(path="./notes"):
     files = os.listdir(path)
     txtFiles = []
     for filename in files:
-        if filename.endswith(".txt"):
+        if filename.endswith(".ehinote"):
             txtFiles.append(filename)
     for path in txtFiles:
         with open("./notes/" + path, "r", encoding="UTF-8") as file:
@@ -1459,7 +1454,7 @@ def loadNote(path="./notes"):
                     noteData.append(eval(dataHandle(line)))
                 i += 1
             GameVar.songNotes[this_name] = noteData.copy()
-            print(noteData)
+            #print(noteData)
 
 
 def infoHandle(resourse):
@@ -1509,6 +1504,7 @@ def control():
         hall_main()
     elif GameVar.states == GameVar.STATES["SETTING"]:
         GameVar.bg.draw()
+        bgm_play()
         setting_main()
     elif GameVar.states == GameVar.STATES["SONGS_CHOOSE"]:
         GameVar.bg.draw()
@@ -1574,9 +1570,9 @@ def control():
         GameVar.bg.draw()
 
         commentEnterNew(GameVar.thisSong)
-        commentDraw()
         commentStep()
         commentDelete()
+        commentDraw()
         commentAnimation()
         GameVar.judgeResult.draw()
         GameVar.judgeResult.delete()
@@ -1630,7 +1626,7 @@ def control():
     elif GameVar.states == GameVar.STATES["GAME_OVER"]:
         GameVar.bg.draw()
         commentDraw()
-        # GameVar.main_page_bgm.set()
+        #GameVar.main_page_bgm.set()
         end_animate()
     # 循环后执行
     message_state_change()

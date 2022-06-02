@@ -140,3 +140,5 @@ cython_debug/
 
 .idea/
 autoSaves/
+
+notes/autoSaves/

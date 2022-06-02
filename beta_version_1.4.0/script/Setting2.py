@@ -1,3 +1,8 @@
+"""
+    老版设置类，已弃用
+"""
+
+
 import pygame, time
 from pygame.locals import *
 

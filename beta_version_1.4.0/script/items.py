@@ -212,22 +212,30 @@ class Crystal(Skill_P):
     def __init__(self,GameVar, sprite, canvas):
         Skill_P.__init__(self,"Crystal","green",0,100,True,None,None,"None",pygame.image.load("images/items/ehi1st/crystal.png"),GameVar,canvas)
     def skill_main(self):
-        dis = 99999999
-        this_o = None
-        this_dis = 0
         heroPos = (self.GameVar.hero.x, self.GameVar.hero.y)
-        for enemy in self.GameVar.enemies:
-            if enemy.number == 0 or enemy.number == 2:
-                this_dis = abs(enemy.y - heroPos[1])
-            elif enemy.number == 1 or enemy.number == 3:
-                this_dis = abs(enemy.x - heroPos[0])
-            if this_dis < dis:
-                dis = this_dis
-                this_o = enemy
+        heroSize = (self.GameVar.hero.width, self.GameVar.hero.height)
+        enemyDistanceJudge = self.GameVar.enemies.copy()
+        for i in range(len(enemyDistanceJudge) - 1):
+            for j in range(len(enemyDistanceJudge) - i - 1):
+                if enemyDistanceJudge[j].getDistance(heroPos, heroSize) > enemyDistanceJudge[j + 1].getDistance(heroPos, heroSize):
+                    temp = enemyDistanceJudge[j + 1]
+                    enemyDistanceJudge[j + 1] = enemyDistanceJudge[j]
+                    enemyDistanceJudge[j] = temp
 
-        if this_o == None:
-            return
-        pygame.draw.rect(self.canvas, (255, 0, 0), (this_o.x, this_o.y, this_o.width, this_o.height), width=3)
+        # for enemy in enemyDistanceJudge:
+        #     if enemy.number == 0 or enemy.number == 2:
+        #         this_dis = abs(enemy.y - heroPos[1])
+        #     elif enemy.number == 1 or enemy.number == 3:
+        #         this_dis = abs(enemy.x - heroPos[0])
+        #     if this_dis < dis:
+        #         dis = this_dis
+        #         this_o = enemy
+
+        colors = [(255, 0, 0), (150, 0, 0)]
+        for i in range(len(enemyDistanceJudge)):
+            this_o = enemyDistanceJudge[i]
+            if(i < len(colors)):
+                pygame.draw.rect(self.canvas, colors[i], (this_o.x, this_o.y, this_o.width, this_o.height), width=3)
 
 
 
@@ -258,3 +266,17 @@ class Items():
         # print(self.id_list)
     def get_item(self,id):
         return self.list[id][0]
+
+    def reset(self, GameVar, canvas):
+        self.star_light = Star_light(GameVar, "null", canvas)
+        self.diamond = Diamond(GameVar, "null", canvas)
+        self.apple = Apple(GameVar, "null", canvas)
+        self.bandage = Bandage(GameVar, "null", canvas)
+        self.crystal = Crystal(GameVar, "null", canvas)
+        self.stick = Stick(GameVar, "null", canvas)
+        self.rope = Rope(GameVar, "null", canvas)
+        self.list = [[self.star_light,0],[self.diamond,1],[self.apple,2],[self.bandage,3],[self.crystal,4],[self.stick,5],[self.rope,6]]
+        self.id_list = {}
+
+        for item in self.list:
+            self.id_list[item[0].name] = item[1]

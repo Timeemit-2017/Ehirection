@@ -15,13 +15,13 @@ class Arrow(object):
     def draw_pos(self, canvas, pos):
         canvas.blit(self.img, pos)
 
-    def draw(self, times, canvas, thisTime, set=None, list=None):
+    def draw(self, times, canvas, thisTime, deHighLight):
         video_size = canvas.get_size()
         pos = (video_size[0] / 2 - self.size[0] / 2 - (thisTime - self.time) * times,
                video_size[1] / 2 - self.size[1] / 2
                )
         self.pos = pos
-        self.checkHighLightRange(pos, video_size)
+        self.checkHighLightRange(pos, video_size, deHighLight)
         if not 0 - self.width < pos[0] < video_size[0]:
             return
         canvas.blit(self.img, pos)
@@ -46,12 +46,12 @@ class Arrow(object):
     def setHighLight(self, target):
         self.if_highLight = target
 
-    def checkHighLightRange(self, pos, video_size):
+    def checkHighLightRange(self, pos, video_size, deHighLight):
         x = pos[0]
         width = self.width
         if video_size[0] / 2 - width <= x <= video_size[0] / 2:
             self.if_highLight = True
-        else:
+        elif deHighLight:
             self.if_highLight = False
 
 

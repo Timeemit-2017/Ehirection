@@ -7,6 +7,7 @@ from indexDesigner_script.BackGround import *
 from indexDesigner_script.Button import *
 from indexDesigner_script.Font import *
 from indexDesigner_script.Arrow import *
+from indexDesigner_script.History import *
 
 pygame.init()
 
@@ -15,6 +16,9 @@ HEIGHT = 720
 SIZE = (WIDTH, HEIGHT)
 canvas = pygame.display.set_mode((WIDTH, HEIGHT),HWSURFACE|RESIZABLE)
 canvas.fill((0,0,0))
+
+originCaption = "Index Designer 1.0.0"
+pygame.display.set_caption(originCaption)
 
 arrow_name = ["up", "right", "down", "left"]
 arrow_img = []
@@ -34,12 +38,15 @@ LEFT_HOLD = False
 RIGHT_HOLD = False
 aHOLD = False
 dHOLD = False
+shouldBeRecored = False
 def handleEvent():
-    global canvas,SIZE,WIDTH,HEIGHT,WIDTH_2,HEIGHT_2,MOUSE_POS,middleLine,middleLineColor,BUTTONLOCK,MUSIC_OFFSET,LEFT_HOLD,RIGHT_HOLD,aHOLD,dHOLD
+    global canvas,SIZE,WIDTH,HEIGHT,WIDTH_2,HEIGHT_2,MOUSE_POS,middleLine,middleLineColor,BUTTONLOCK,MUSIC_OFFSET,LEFT_HOLD,RIGHT_HOLD,aHOLD,dHOLD,shouldBeRecored
     #常量
     MOUSE_POS = pygame.mouse.get_pos()
     BUTTONLOCK = False #按钮锁，每一次点击只可以激活一个按钮
     eventList = pygame.event.get()
+    buttonPressed = pygame.key.get_pressed()
+    shouldBeRecored = False
     # print(eventList)
     for event in eventList:
         if event.type == QUIT or event.type == KEYDOWN and event.key == K_F1:
@@ -101,7 +108,8 @@ def handleEvent():
                     Locals.startIndexFlag = False
                 for dire in direc:
                     if event.type == KEYDOWN and event.key == dire:
-                        set_arrow(Locals.thisTime/1000,direc[dire])
+                        set_arrow(Locals.thisTime/1000, direc[dire])
+                        shouldBeRecored = True
             else:
                 if event.type == KEYDOWN and event.key == K_SPACE:
                     if Locals.if_restart:
@@ -118,6 +126,7 @@ def handleEvent():
                     pygame.mixer.music.rewind()
                     pygame.mixer.music.set_pos(Locals.thisTime/1000)
                     Locals.startIndexFlag = True
+                    # Locals.thisTime = pygame.mixer.music.get_pos() - MUSIC_OFFSET
                     break
                 elif event.type == KEYDOWN and event.key == 13:
                     Locals.editFloor += 1
@@ -131,12 +140,30 @@ def handleEvent():
                 if event.type == KEYDOWN and event.key == K_LEFT:
                     if Locals.editFloor == 0:
                         LEFT_HOLD = True
+                        if event.mod & KMOD_SHIFT:
+                            Locals.moveSpeed = 40 * 50 / Locals.scaleTimes
+                        else:
+                            Locals.moveSpeed = 40
+                        if event.mod & KMOD_CTRL:
+                            Locals.deHighLight = False
+                        else:
+                            Locals.deHighLight = True
+                    elif Locals.editFloor == 1 and event.mod & KMOD_ALT:
+                        pass
                     elif Locals.editFloor == 2:
                         Locals.highLightArrows[Locals.editChoose].dire = 3
                         Locals.highLightArrows[Locals.editChoose].setImg(arrow_img[3])
                 if event.type == KEYDOWN and event.key == K_RIGHT:
                     if Locals.editFloor == 0:
                         RIGHT_HOLD = True
+                        if event.mod & KMOD_SHIFT:
+                            Locals.moveSpeed = 40 * 50 / Locals.scaleTimes
+                        else:
+                            Locals.moveSpeed = 40
+                        if event.mod & KMOD_CTRL:
+                            Locals.deHighLight = False
+                        else:
+                            Locals.deHighLight = True
                     elif Locals.editFloor == 2:
                         Locals.highLightArrows[Locals.editChoose].dire = 1
                         Locals.highLightArrows[Locals.editChoose].setImg(arrow_img[1])
@@ -165,26 +192,80 @@ def handleEvent():
                     RIGHT_HOLD = False
                 if event.type == KEYUP and event.key == K_a:
                     aHOLD = False
+                    shouldBeRecored = True
                 if event.type == KEYUP and event.key == K_d:
                     dHOLD = False
+                    shouldBeRecored = True
                 if event.type == KEYUP and event.key == K_DELETE:
                     if Locals.editFloor == 2:
                         Locals.arrows.remove(Locals.highLightArrows[Locals.editChoose])
                         Locals.highLightArrows.pop(Locals.editChoose)
+                        shouldBeRecored = True
 
                 if Locals.editChoose < 0:
                     Locals.editChoose = 0
                 elif Locals.editChoose >= len(Locals.highLightArrows):
                     Locals.editChoose = len(Locals.highLightArrows) - 1
 
-                if Locals.highLightArrows == []:
+                if not Locals.highLightArrows:
                     Locals.editFloor = 0
 
                 if event.type == KEYDOWN and event.key == K_F2:
                     save()
                     changeState("HOME")
-                if event.type == KEYDOWN and event.key == K_F3:
-                    save()
+
+
+            if event.type == KEYUP and event.mod & KMOD_CTRL and event.mod & KMOD_ALT and event.key == K_z:
+                temp = Locals.history.undo()
+                if temp != "None":
+                    Locals.arrows = temp.copy()
+                # print(Locals.history.history, Locals.history.index)
+            elif event.type == KEYUP and event.mod & KMOD_CTRL and event.key == K_z:
+                temp = Locals.history.redo()
+                if temp != "None":
+                    Locals.arrows = temp.copy()
+            if event.type == KEYUP and event.mod & KMOD_CTRL and event.key == K_s:
+                save()
+            if event.type == MOUSEWHEEL and pygame.key.get_mods() & KMOD_CTRL:
+                Locals.scaleTimes += event.y * 10
+                if Locals.scaleTimes <= 10:
+                    Locals.scaleTimes = 10
+            if event.type == KEYUP and event.key == K_F3:
+                willStart = True
+                start = 0
+                if not easygui.boolbox("是否开始快捷编写旋转结构？"):
+                    willStart = False
+                if easygui.boolbox("顺时针还是逆时针？", choices=["顺时针", "逆时针"]):
+                    # 顺时针
+                    dire = 1
+                else:
+                    # 逆时针
+                    dire = -1
+                choices = ["上", "右", "下", "左"]
+                temp = easygui.choicebox("以哪个方向为开始？", choices=choices)
+                if temp is None:
+                    willStart = False
+                else:
+                    start = choices.index(temp)
+                if willStart:
+                    for arrow in Locals.highLightArrows:
+                        arrow.dire = start
+                        arrow.setImg(arrow_img[start])
+                        start += dire
+                        if start > 3:
+                            start = 0
+                        elif start < 0:
+                            start = 3
+                        print("oneOVer")
+                    shouldBeRecored = True
+                    print("over")
+
+            if shouldBeRecored:
+                if Locals.history.checkIfHasUndo():
+                    Locals.history.update()
+                Locals.history.append(Locals.arrows.copy())
+
+
 
 def askformusic():
     print("askmusic")
@@ -197,7 +278,7 @@ def askformusic():
     varSplited = var.split("/")[-1]
     Locals.project_music_road = var
 
-    print(var)
+    #print(var)
     return varSplited
 
 def askforname():
@@ -241,26 +322,30 @@ def askForDesigner():
 def askForData():
     var = tkinter.filedialog.askopenfilename(title="选择存档",
                                              initialdir="./notes",
-                                             filetypes=[("*TXT", ".txt")]
+                                             filetypes=[("*EHINOTE", ".ehinote")]
                                              )
     return var
 
 def createNewProject():
     Locals.project_name = "Unnamed"
-    Locals.project_music_road = "Undefined"
+    if Locals.project_music_road == "Undefined":
+        Locals.project_music_road = "./songs/foundation_pack/idealism,jinsang - winter bokeh.mp3"
+    if Locals.project_cover_road == "Undefined":
+        Locals.project_cover_road = "./images/start/songs/winter bokeh.jpg"
     Locals.state = Locals.STATES["CREATE"]
 
 class Locals():
+    thisCaption = originCaption
 
     STATES = {"LOAD":0, "HOME":1, "CREATE":2, "OPEN":3, "QUIT":4, "INDEX":5, "INFO":6}
     state = STATES["HOME"]
 
     project_name = "name"
     project_littleName = "littleName"
-    project_music_road = "None"
-    project_cover_road = "None"
-    project_author = "None"
-    project_noteDesigner = "None"
+    project_music_road = "Undefined"
+    project_cover_road = "Undefined"
+    project_author = "Unknown"
+    project_noteDesigner = "Unknown"
 
     fps = 60
     clock = pygame.time.Clock()
@@ -282,6 +367,14 @@ class Locals():
     thisSongLong = 50000
 
     if_restart = False
+
+    history = History()
+
+    textPath = ""
+
+    scaleTimes = 100
+
+    deHighLight = True
 
     backGround = BackGround(color = (0,0,0),
                             size = (1280, 720)
@@ -393,7 +486,7 @@ def set_arrow(time, dire, arrow=None):
 
 def draw_arrow():
     for arrow in Locals.arrows:
-        arrow.draw(100, canvas, Locals.thisTime/1000, Locals.editFloor == 1 or Locals.editFloor == 2, Locals.highLightArrows)
+        arrow.draw(Locals.scaleTimes, canvas, Locals.thisTime/1000, Locals.deHighLight)
 
         if Locals.startIndexFlag:
             arrow.if_highLight = False
@@ -481,23 +574,36 @@ def arrowInOrder(list, forSave=False):
 
 
 def save(exit=False):
+    pygame.display.set_caption(Locals.thisCaption)
     # var = tkinter.filedialog.askopenfilename(title="选择谱面要使用的音乐",
     #                                          initialdir="E:/",
     #                                          filetypes=[("*MP3", ".mp3")]
     #
     #                                          )
     if exit:
-        textPath = "./notes/autoSaves/AutoSave{0}.txt".format(time.strftime("%Y-%m-%d-%H.%M.%S", time.localtime()))
+        if tkinter.messagebox.askyesno("警告", "是否保存"):
+            if not Locals.textPath:
+                Locals.textPath = "./notes/autoSaves/AutoSave{0}.ehinote".format(time.strftime("%Y-%m-%d-%H.%M.%S", time.localtime()))
+            else:
+                save(exit)
+                return
+        else:
+                return
     else:
-        textPath = tkinter.filedialog.asksaveasfilename(title="选择保存谱面文件的位置",
-                                                        filetypes=[("*TXT", ".txt")],
+        if not Locals.textPath:
+            Locals.textPath = tkinter.filedialog.asksaveasfilename(title="选择保存谱面文件的位置",
+                                                        filetypes=[("*EHINOTE", ".ehinote")],
                                                         initialdir = "./notes",
-                                                        initialfile = "Untitled.txt"
+                                                        initialfile = "Untitled.ehinote"
                                                         )
-    if textPath == "":
-        textPath = "./notes/autoSaves/AutoSave{0}.txt".format(time.strftime("%Y-%m-%d-%H.%M.%S", time.localtime()))
+            if tkinter.messagebox.askyesno("警告", "是否保存"):
+                save(exit)
+                return
+            else:
+                return
+
     arrowInOrder(Locals.arrows, forSave=True)
-    with open(textPath, "w", encoding="UTF-8") as file:
+    with open(Locals.textPath, "w", encoding="UTF-8") as file:
         strGoingSave = ""
         for i in range(-1, len(Locals.arrows)):
             if i == -1:
@@ -514,14 +620,10 @@ def save(exit=False):
             strGoingSave += line
         file.write(strGoingSave)
 
-
-    # print("this   is   a\ntext")
-    # print("this   is   a\ntext".replace(" ", "").replace("\n", ""))
-
 def load(path):
     arrow_list_empty()
     if path == "":
-        return
+        return False
     with open(path, "r", encoding="UTF-8") as file:
         i = 0
         for line in file:
@@ -541,6 +643,8 @@ def load(path):
                 data = eval(dataHandle(line))
                 set_arrow(data[1], data[0])
             i += 1
+    Locals.textPath = path
+    return True
 
 def infoHandle(resourse):
     result = resourse.split(":")[-1]
@@ -555,6 +659,9 @@ def dataHandle(resourse):
     return result
 
 def beforeIndex():
+    Locals.history.empty()
+    Locals.history.append(Locals.arrows.copy())
+    print (Locals.history.index)
     pygame.mixer.music.load(Locals.project_music_road)
     document = MP3(Locals.project_music_road)
     Locals.thisSongLong = document.info.length
@@ -562,15 +669,21 @@ def beforeIndex():
     pygame.mixer.music.play(start=50.0)
     pygame.mixer.music.set_volume(0.2)
     pygame.mixer.music.pause()
+    Locals.thisCaption = Locals.project_name
+    pygame.display.set_caption(Locals.project_name)
 
 def control():
+    if shouldBeRecored:
+        pygame.display.set_caption(Locals.thisCaption + "*")
     if checkState("HOME"):
         Locals.backGround.draw(canvas)
         button_main()
     elif checkState("OPEN"):
-        load(askForData())
-        beforeIndex()
-        changeState("INDEX")
+        if load(askForData()):
+            beforeIndex()
+            changeState("INDEX")
+        else:
+            changeState("HOME")
     elif checkState("CREATE") or checkState("INFO"):
         Locals.backGround.draw(canvas)
         button_main()
@@ -615,11 +728,13 @@ def control():
 
 
 while True:
+
     last_fps_time = Locals.clock.tick(Locals.fps)
 
-    control()
-
     handleEvent()
+
+    control()
+    # renderText(str(Locals.history.history), (0, 400), canvas, font=Font.small_normal_text)
 
     pygame.display.update()
 

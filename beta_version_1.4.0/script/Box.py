@@ -4,6 +4,7 @@ from script.items import *
 from pygame.locals import *
 from script.Animation import *
 from script.Pool import *
+from script.Account_Item import *
 
 
 pygame.init()
@@ -171,7 +172,7 @@ class Box_Animation():
         price = 10
         if text == "打开一次":
             if not checkCoin(price, GameVar):
-                message_summon("System", "金币不足！")
+                GameVar.messageControl.message_summon("System", "金币不足！")
                 return False
             GameVar.coin -= price
             data = GameVar.home.box(0, 1,)
@@ -180,10 +181,10 @@ class Box_Animation():
                 if item.name == data[0].name:
                     print("repeat" + item.name, data[0].name)
                     item.number += 1
-                    item.update()
+                    item.update(GameVar)
                     passer = True
             if not passer:
-                GameVar.backpack.append(Account_Item(ITEMS.id_list[data[0].name], 1))
+                GameVar.backpack.append(Account_Item(GameVar.ITEMS.id_list[data[0].name], 1, GameVar.ITEMS))
             return True
         elif text == "打开十次":
             if not checkCoin(price * 10, GameVar):
@@ -197,13 +198,13 @@ class Box_Animation():
                     if item.name == data.name:
                         # print("repeat" + item.name, data.name)
                         item.number += 1
-                        item.update()
+                        item.update(GameVar)
                         passer = True
                 if not passer:
-                    GameVar.backpack.append(Account_Item(ITEMS.id_list[data.name], 1))
+                    GameVar.backpack.append(Account_Item(GameVar.ITEMS.id_list[data.name], 1, GameVar.ITEMS))
             # print(GameVar.home.list)
             return True
-        save()
+        GameVar.save()
 
     def start(self):
         self.lastTime = time.time()
@@ -370,7 +371,6 @@ class Box_result():
                     self.item_animations.append(self.item_animations_orgin[self.light_index])
         canvas.blit(pygame.transform.scale(self.background, (320 * self.times, 180 * self.times)),
                     (WIDTH_2 - 320 * self.times / 2, HEIGHT_2 - 180 * self.times / 2))
-        pygame.draw.rect(canvas, (255, 0, 0), (WIDTH_2 - 320 * self.times / 2, HEIGHT_2 - 180 * self.times / 2, 320 * self.times, 180 * self.times), width=1)
         if self.state == 3:
             self.index = len(self.lights) - 1
             self.draw_box()

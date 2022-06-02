@@ -44,6 +44,19 @@ class History:
             return
         return self.history[old]
 
+    def forward(self):
+        """
+        将历史记录向前进一
+
+        :return:前进后指向的数据
+        """
+        self.index += 1
+        if self.index >= len(self.history):
+            self.index = len(self.history) - 1
+        if self.index == -1:
+            return
+        return self.load()
+
     def load(self):
         """
         :return: 当前指向的数据。
@@ -58,8 +71,16 @@ class History:
         :return: 撤销后的数据。
         """
         self.has_save = False
-        if self.index == -1:
+        if self.index <= -1:
             return "None"
         self.back()
         return self.load()
 
+    def redo(self):
+        self.has_save = False
+        if len(self.history) != 0 and self.index != len(self.history) - 1:
+            return self.forward()
+        return "None"
+
+    def checkIfHasUndo(self):
+        return self.index != len(self.history) - 1
