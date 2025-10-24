@@ -7,20 +7,6 @@ import pygame
 import random, time, sys, os, math
 import tkinter.messagebox
 from pygame.locals import *
-# try:
-#     from script.summon_treasure import *
-#     from script.items import *
-#     from script.lobby import *
-#     from script.Hall import *
-#     from script.Error import *
-#     from script.Setting import *
-#     from script.Animation import *
-#     from script.Pool import *
-#     from script.Box import *
-# except:
-#     showError("加载脚本文件时出现错误,请检查脚本文件")
-#     pygame.quit()
-#     sys.exit()
 
 from script.summon_treasure import *
 from script.items import *
@@ -82,11 +68,6 @@ orange = pygame.image.load("images/orange.png")
 yellowDM = pygame.image.load("images/DMcs/yellowCM.png")
 # 加载歌曲选单图片
 cph = pygame.image.load("images/start/changpianhuan.png")
-# 加载歌曲封面
-# his_theme=pygame.image.load("images/start/songs/his_theme.jpg")
-# tyx=pygame.image.load("images/start/songs/tyx.jpg")
-# shib=pygame.image.load("images/start/songs/shib.jpg")
-# piano=pygame.image.load("images/start/songs/The_Piano.png")
 # 加载死亡图片素材
 die = pygame.Surface((WIDTH, HEIGHT), SWSURFACE | RLEACCEL).convert()
 die.set_alpha(128)
@@ -176,6 +157,8 @@ def handleEvent():
             SIZE = (WIDTH, HEIGHT)
 
             GameVar.itemChoose.item_choose_x = (WIDTH - 1280) / 2
+            if GameVar.itemChoose.state == 0:
+                GameVar.itemChoose.reset()
             GameVar.itemChoose.compensatory = (WIDTH_2 - 640, HEIGHT_2 - 360)
             GameVar.item_choose_highlight.compensatory = GameVar.itemChoose.compensatory
 
@@ -266,6 +249,13 @@ def handleEvent():
             else:
                 GameVar.lobbyForceControl.lobbyFriction()
             # print(str(LobbyVar.moveSpeed))
+            
+            if event.type == KEYUP and event.key == 13:
+                GameVar.states = GameVar.STATES["SONGS_CHOOSE"]
+                return
+            if event.type == KEYUP and event.key == K_ESCAPE:
+                GameVar.states = GameVar.STATES["SETTING"]
+                return
             for item in GameVar.lobbyObjects:
                 if E_KEY_PRESSED[KEYS["lobby_right"]]:
                     if item.item and right_passer:
@@ -273,12 +263,6 @@ def handleEvent():
                 elif E_KEY_PRESSED[KEYS["lobby_left"]]:
                     if item.item and left_passer:
                         item.step(-1, last_fps_time)
-                if event.type == KEYUP and event.key == 13:
-                    GameVar.states = GameVar.STATES["SONGS_CHOOSE"]
-                    return
-                if event.type == KEYUP and event.key == K_ESCAPE:
-                    GameVar.states = GameVar.STATES["SETTING"]
-                    return
                 if item.item and item.checkRange((E_MOUSE_POS[0] - (WIDTH - 62 * 8) / 2),
                                                  (E_MOUSE_POS[1] - (HEIGHT - 62 * 8) / 2), 1, 1):
                     if event.type == MOUSEBUTTONDOWN and event.button == 1:
@@ -308,11 +292,11 @@ def handleEvent():
                 else:
                     button.animation(False)
         elif GameVar.states == GameVar.STATES["BOX_GET"]:
-            if event.type == KEYUP and event.key == K_ESCAPE and GameVar.box_result.state == 3:
+            if event.type == KEYUP and event.key == K_RETURN and GameVar.box_result.state == 3:
                 GameVar.states = GameVar.STATES["BOX"]
                 return
 
-            elif event.type == KEYUP and event.key == K_RETURN or event.type == KEYUP and event.key == K_ESCAPE and GameVar.box_result.state != 3:
+            elif event.type == KEYUP and event.key == K_RETURN or event.type == KEYUP and event.key == K_RETURN and GameVar.box_result.state != 3:
                 GameVar.box_result.skip(GameVar, SIZE)
         elif GameVar.states == GameVar.STATES["SETTING"]:
             if event.type == KEYUP and event.key == K_ESCAPE:
@@ -506,9 +490,10 @@ class Hero(GameObject):
 
     def lifeErase(self):
         hurt = GameVar.enemy_damage - self.defeat
-        if hurt <= 0:
+        if hurt <= 0:  # 为了防止通过道具技能的漏洞实现受伤加血的操作
             hurt = 0.1
         self.life -= hurt
+        GameVar.judgeResult.set("Combo", 0)
 
     def Cstep(self):
         if self.Cy < self.y + self.height:
@@ -605,12 +590,13 @@ class Enemy(GameObject):
         if self.number == 3:
             self.x = GameVar.DMcomp[self.number].x - self.hero_distance
             self.y = GameVar.DMcomp[self.number].y
+        image = pygame.image.load("images/animation/disappear3.png")
         self.ani = Sprite(
-            pygame.image.load("images/animation/disappear.png"),
-            (self.x - 10, self.y - 10),
-            [(0, 0), (70, 0), (140, 0), (210, 0), (280, 0)],
-            (70, 70),
-            0.1
+            image,
+            (self.x - (100 - self.width) / 2, self.y - (100 - self.height) / 2),
+            [(0, 0), (100, 0), (200, 0), (300, 0), (400, 0)],
+            (100, 100),
+            0.08
         )
 
     def step(self):
@@ -624,7 +610,7 @@ class Enemy(GameObject):
             self.y -= speedFrame
         elif self.number == 3:
             self.x += speedFrame
-        self.ani.position = (self.x - 10, self.y - 10)
+        self.ani.position = (self.x - (100 - self.width) / 2, self.y - (100 - self.height) / 2)
 
     def bang(self, if_score):
         self.life -= 1
@@ -632,15 +618,16 @@ class Enemy(GameObject):
             self.delete = True
         if if_score:
             GameVar.hero.score += 5
-
+    
     def getDistance(self, targetPos, targetSize):
+        # 求与自身与目标的距离
         tx = targetPos[0]
         ty = targetPos[1]
         twidth = targetSize[0]
         theight = targetSize[1]
-        if self.x == tx:
+        if self.x == tx:  # 当自身与目标在同一纵列上时
             dis = abs(self.y - ty)
-        elif self.y == ty:
+        elif self.y == ty:  # 当自身与目标在同一横行上时
             dis = abs(self.x - tx)
         else:  # 求此对象中点与目标中点的距离
             thisMiddle = (self.x + self.width / 2, self.y + self.height / 2)
@@ -652,25 +639,19 @@ class Enemy(GameObject):
 
     def judge(self, DMpos, DMsize, **kwargs):
         dis = self.getDistance(DMpos, DMsize)
-        if 35 < dis < 50:
+        if dis > 35:
             result = "Bad"
-        elif 15 < dis <= 35:
+        elif dis > 15:
             result = "Good"
-        elif 0 <= dis <= 15:
+        elif dis >= 0:
             result = "Perfect"
-        elif dis < 0:
-            result = "MISS"
-        elif dis > 50:
-            result = "EMPTY"
-        else:
-            result = "Unknown"
         GameVar.messageControl.message_summon("System.Enemy.judge", "{0} distance:".format(result) + str(dis))
         GameVar.judgeResult.append(result)
         GameVar.judgeResult.append("Combo")
         GameVar.judgeResult.changeDisplay(result)
 
     def animation(self):
-        result = self.ani.animation(canvas, 0, 4)
+        result = self.ani.animation(canvas)
         if result == "Done":
             return "Done"
 
@@ -700,7 +681,10 @@ class JudgeResult():
         self.alpha = 255
 
     def append(self, type, num=1):
-        self.judges[type] += num
+        self.set(type, self.judges[type] + num)
+    
+    def set(self, type, num=0):
+        self.judges[type] = num
         self.update()
 
     def update(self):
@@ -712,7 +696,7 @@ class JudgeResult():
     def outPut(self):
         return self.judges
 
-    def set(self):
+    def reset(self):
         self.result = "None"
         self.bad = 0
         self.good = 0
@@ -745,10 +729,13 @@ class Item_choose:
 
     def init(self):
         self.state = 0
+        self.reset()
+
+    def reset(self):
         self.item_choose_y = 0 + HEIGHT_2 - 360
 
     def main(self):
-        if self.state == 0:
+        if self.state == 0:  # 收起
             if self.item_choose_y > 0 + HEIGHT_2 - 360:
                 self.animate_0()
                 if self.item_choose_y < 0 + HEIGHT_2 - 360:
@@ -763,9 +750,9 @@ class Item_choose:
                 return
             else:
                 canvas.blit(items[self.this_item], (591 + self.compensatory[0], 311 + self.compensatory[1]))
-        elif self.state == 1:
+        elif self.state == 1:  # 展开
             canvas.blit(die, (0, 0))
-            if self.item_choose_y < 134:
+            if self.item_choose_y < self.compensatory[1] + HEIGHT * 0.2:
                 self.animate_1()
                 canvas.blit(self.item_choose, (self.item_choose_x, self.item_choose_y))
                 if not self.item_ready == -1:
@@ -1088,7 +1075,7 @@ class DMcomponent():
         self.set()
 
     def set(self):
-        dis = 115
+        dis = 100
         if GameVar.gamemode == "yellow":
             if self.number == 0:
                 self.x = GameVar.hero.x
@@ -1195,7 +1182,7 @@ def commentDelete():
                     enemy.bang(True)
                     enemy.judge((DM.x, DM.y), (DM.width, DM.height))
                     DM.iflighted = False
-                    DM.if_lighted = False
+                    #DM.if_lighted = False
                     target = random.randint(0, 1)
                     if target == 0:
                         click.play()
@@ -1227,7 +1214,7 @@ def song_init():
     GameVar.hero.score = 0
     GameVar.enemy_damage = 5
     GameVar.score_to_coin = 30
-    GameVar.judgeResult.set()
+    GameVar.judgeResult.reset()
 
     GameVar.skip = -1
     GameVar.enemies = []

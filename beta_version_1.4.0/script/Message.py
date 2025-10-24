@@ -47,7 +47,7 @@ class Message:
 class MessageControl:
     def __init__(self, canvas):
         self.messages = []
-        self.if_message = True
+        self.if_message = False
         self.canvas = canvas
 
     def message_summon(self, come, message):

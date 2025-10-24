@@ -49,16 +49,18 @@ class Sprite(object):
         draw_range = (self.pos[self.index][0], self.pos[self.index][1], self.size[0], self.size[1])
         target.blit(self.source, (self.position[0] + self.originPoint[0], self.position[1] + self.originPoint[1]), draw_range)
 
-    def animation(self, target, start, end, if_set=True):
+    def animation(self, target, start=0, end=-1, if_set=True):
+        if end == -1:
+            end = len(self.pos)
         self.draw(target)
         if not self.ifDoAction(self.interval, self.lastTime):
             return
         self.lastTime = time.time()
         self.index += 1
-        if if_set and self.index > end or self.index < start:
+        if if_set and self.index >= end or self.index < start:
             self.index = start
             return "Done"
-        if self.index > len(self.pos):
+        if self.index >= len(self.pos):
             self.index = 0
             return "Done"
 
@@ -68,7 +70,7 @@ class Sprite(object):
         self.lastTime = time.time()
 
     def set_pos(self, screen_size):
-        # ÒªÇó£ºscreen_size±ØÐë´óÓÚ (1280, 720)£¬·ñÔò»áÓÐ¼æÈÝÐÔÎÊÌâ
+        # Òªï¿½ï¿½screen_sizeï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (1280, 720)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         #self.position = (screen_size[0] * self.minus_size[0], screen_size[1] * self.minus_size[1])
 
         self.originPoint = (screen_size[0] / 2 - self.originScreenSize[0] / 2, screen_size[1] / 2 - self.originScreenSize[1] / 2)

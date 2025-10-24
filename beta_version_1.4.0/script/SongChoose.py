@@ -104,7 +104,7 @@ class SongChoose:
             list_temp = []
             for rec in self.records:
                 list_temp.append(self.records[rec])
-            print(list_temp)
+            #print(list_temp)
             if self.dire:
                 temp = list_temp[0]
                 list_temp[0] = list_temp[-1]
@@ -129,14 +129,14 @@ class SongChoose:
             self.set(SIZE, ifCleanSpeed=False)
 
     def checkMiddle(self):
-        # 检测record_main是否已经超过中间，是的话直接切换下一个
+        # 检测record_main是否已经超过一定距离，是的话直接切换下一个
         if self.dire:
-            if self.record_m.pos[1] < self.recordMain_orgin[1] - self.cphHeight / 2:
+            if self.record_m.pos[1] < self.recordMain_orgin[1] - self.cphHeight * 0.8:
                 self.changeNumber(self.dire)
                 self.checkNumber()
                 self.info_update()
         else:
-            if self.record_m.pos[1] > self.recordMain_orgin[1] + self.cphHeight / 2:
+            if self.record_m.pos[1] > self.recordMain_orgin[1] + self.cphHeight * 0.8:
                 self.changeNumber(self.dire)
                 self.checkNumber()
                 self.info_update()
@@ -188,12 +188,12 @@ class SongChoose:
 
     def draw(self, if_message):
         self.recordDraw()
-        if if_message:
-            pygame.draw.rect(self.canvas, (255, 255, 255), (self.record_m.pos[0], self.record_m.pos[1], 360, 360), width=1)
-            pygame.draw.rect(self.canvas, (255, 0, 255), (self.record_uu.pos[0], self.record_uu.pos[1], 360, 360), width=1)
-            pygame.draw.rect(self.canvas, (255, 0, 0), (self.record_u.pos[0], self.record_u.pos[1], 360, 360), width=1)
-            writeText("Record_Main: " + str(self.record_m.pos), (0, 300), self.canvas)
-            writeText("SongChoose.start: " + str(self.start), (0, 50), self.canvas)
+        # if if_message:
+        #     pygame.draw.rect(self.canvas, (255, 255, 255), (self.record_m.pos[0], self.record_m.pos[1], 360, 360), width=1)
+        #     pygame.draw.rect(self.canvas, (255, 0, 255), (self.record_uu.pos[0], self.record_uu.pos[1], 360, 360), width=1)
+        #     pygame.draw.rect(self.canvas, (255, 0, 0), (self.record_u.pos[0], self.record_u.pos[1], 360, 360), width=1)
+        #     writeText("Record_Main: " + str(self.record_m.pos), (0, 300), self.canvas)
+        #     writeText("SongChoose.start: " + str(self.start), (0, 50), self.canvas)
 
     def init(self, SIZE):
         self.set(SIZE)
